@@ -763,7 +763,6 @@ function AppContent() {
         () => [
             { icon: ShieldCheck, label: "Secrets stay encrypted locally" },
             { icon: PlugZap, label: "Auto reconnect with retry" },
-            { icon: Activity, label: "Live status monitoring" },
         ],
         []
     );
@@ -773,41 +772,19 @@ function AppContent() {
             {/* Session Restoration Loading Overlay */}
             {isRestoring && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                    <div className="mx-4 w-full max-w-xl rounded-2xl border bg-card p-8 shadow-2xl">
+                    <div className="mx-4 w-full max-w-sm rounded-2xl border bg-card p-8 shadow-2xl">
                         <div className="flex items-center gap-4">
                             <div>
                                 <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
                                     Workspace Restore
                                 </p>
                                 <h3 className="mt-1 text-2xl font-semibold text-foreground">
-                                    Bringing your sessions back online
+                                    Bringing your sessions back
                                 </h3>
                             </div>
                         </div>
 
                         <div className="mt-6 space-y-5">
-                            <div
-                                className="flex items-center justify-between text-sm text-muted-foreground"
-                                aria-live="polite"
-                            >
-                                <span>
-                                    {currentRestoreTarget
-                                        ? `Reconnecting ${currentRestoreTarget.name}`
-                                        : "Preparing saved sessions"}
-                                </span>
-                                <span className="font-semibold text-foreground">
-                                    {restoringProgress.current} /{" "}
-                                    {restoringProgress.total}
-                                </span>
-                            </div>
-
-                            <div className="h-2 overflow-hidden rounded-full bg-muted">
-                                <div
-                                    className="h-full bg-gradient-to-r from-primary to-primary/70 transition-[width] duration-500 ease-out"
-                                    style={{ width: `${restoringPercent}%` }}
-                                />
-                            </div>
-
                             {currentRestoreTarget && (
                                 <div className="flex items-start gap-3 rounded-xl border bg-muted/40 p-4">
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background">
@@ -828,7 +805,7 @@ function AppContent() {
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-3 text-sm text-muted-foreground sm:grid-cols-2">
                                 {restoreHighlights.map(
                                     ({ icon: Icon, label }) => (
                                         <div
