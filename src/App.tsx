@@ -24,6 +24,7 @@ import {
 } from "./lib/session-storage";
 import { TerminalAppearanceSettings } from "./lib/terminal-config";
 import { useLayout, LayoutProvider } from "./lib/layout-context";
+import { MonitoringProvider } from "./lib/system-monitoring-context";
 import {
     useKeyboardShortcuts,
     createLayoutShortcuts,
@@ -529,9 +530,9 @@ function AppContent() {
         async (tabId: string) => {
             // First disconnect the SSH session and close PTY sessions
             try {
-                await invoke('ssh_disconnect', { session_id: tabId });
+                await invoke("ssh_disconnect", { session_id: tabId });
             } catch (error) {
-                console.warn('Failed to disconnect session:', error);
+                console.warn("Failed to disconnect session:", error);
             }
 
             const remainingTabs = tabs.filter((tab) => tab.id !== tabId);
@@ -1052,29 +1053,29 @@ function AppContent() {
                                     defaultValue="monitor"
                                     className="h-full flex flex-col"
                                 >
-                                    <div className="px-3 pt-3 pb-2">
-                                                        <TabsList className="h-7 w-full justify-start bg-transparent p-0 gap-2">
-                                                            <TabsTrigger
-                                                                value="monitor"
-                                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
-                                                            >
-                                                                Monitor
-                                                            </TabsTrigger>
+                                    <div className="px-3 py-2 border-b border-border">
+                                        <TabsList className="h-7 w-full justify-start bg-transparent p-0 gap-2">
+                                            <TabsTrigger
+                                                value="monitor"
+                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
+                                            >
+                                                Monitor
+                                            </TabsTrigger>
 
-                                                            <TabsTrigger
-                                                                value="logs"
-                                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
-                                                            >
-                                                                Logs
-                                                            </TabsTrigger>
+                                            <TabsTrigger
+                                                value="logs"
+                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
+                                            >
+                                                Logs
+                                            </TabsTrigger>
 
-                                                            <TabsTrigger
-                                                                value="alerts"
-                                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
-                                                            >
-                                                                Alerts
-                                                            </TabsTrigger>
-                                                        </TabsList>
+                                            <TabsTrigger
+                                                value="alerts"
+                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
+                                            >
+                                                Alerts
+                                            </TabsTrigger>
+                                        </TabsList>
                                     </div>
 
                                     {/* Always render both Monitor and Logs, use CSS to show/hide */}
@@ -1216,7 +1217,9 @@ function AppContent() {
 export default function App() {
     return (
         <LayoutProvider>
-            <AppContent />
+            <MonitoringProvider>
+                <AppContent />
+            </MonitoringProvider>
         </LayoutProvider>
     );
 }

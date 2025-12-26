@@ -18,6 +18,7 @@ import {
     Loader2,
     Info,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
@@ -30,7 +31,7 @@ import {
     XAxis,
     YAxis,
     CartesianGrid,
-    Tooltip,
+    Tooltip as RechartsTooltip,
     ResponsiveContainer,
     ReferenceLine,
 } from "recharts";
@@ -46,6 +47,7 @@ import {
     AlertDialogTitle,
 } from "./ui/alert-dialog";
 import { toast } from "sonner";
+import { useMonitoring } from "@/lib/system-monitoring-context";
 
 interface CpuDetails {
     total_percent: number;
@@ -121,6 +123,12 @@ interface NetworkSocketStats {
     tcp_timewait: number;
     tcp_synrecv: number;
     udp_total: number;
+    // nf_conntrack - critical for EC2/Linux servers
+    conntrack_current: number;
+    conntrack_max: number;
+    conntrack_percent: number;
+    // Timestamp for rate calculation
+    timestamp_ms: number;
 }
 
 // Global utility functions for percentage color coding
@@ -139,6 +147,7 @@ const getProgressColor = (usage: number): string => {
 };
 
 export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
+    const { updateMonitoringData } = useMonitoring();
     const [stats, setStats] = useState<SystemStats>({
         cpu: 0,
         cpu_details: {
@@ -162,6 +171,12 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
     const [socketStats, setSocketStats] = useState<NetworkSocketStats | null>(
         null
     );
+    // Store previous snapshot for rate calculation
+    const prevSocketStatsRef = useRef<NetworkSocketStats | null>(null);
+    const [networkRates, setNetworkRates] = useState<{
+        connectionsPerSec: number;
+        synPerSec: number;
+    }>({ connectionsPerSec: 0, synPerSec: 0 });
 
     // Refs to track fetching state and prevent concurrent requests
     const isFetchingStats = useRef(false);
@@ -253,6 +268,9 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                 diskUsage: stats.disk.use_percent,
                 uptime: stats.uptime,
             });
+
+            // Update context
+            updateMonitoringData(sessionId, { stats });
         } catch (error) {
             console.error("Failed to fetch system stats:", error);
         } finally {
@@ -291,6 +309,11 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                     command: p.command,
                 }));
                 setProcesses(processesWithNumbers);
+
+                // Update context
+                updateMonitoringData(sessionId, {
+                    processes: result.processes,
+                });
             }
         } catch (error) {
             console.error("Failed to fetch processes:", error);
@@ -398,6 +421,8 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
 
             if (result.success) {
                 setDisks(result.disks);
+                // Update context
+                updateMonitoringData(sessionId, { disks: result.disks });
             } else {
                 console.error("Failed to fetch disk usage:", result.error);
             }
@@ -433,7 +458,42 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
             }>("get_network_socket_stats", { sessionId });
 
             if (result.success && result.stats) {
-                setSocketStats(result.stats);
+                const currentStats = result.stats;
+
+                // Calculate rates if we have previous snapshot
+                if (
+                    prevSocketStatsRef.current &&
+                    currentStats.timestamp_ms > 0 &&
+                    prevSocketStatsRef.current.timestamp_ms > 0
+                ) {
+                    const timeDeltaSec =
+                        (currentStats.timestamp_ms -
+                            prevSocketStatsRef.current.timestamp_ms) /
+                        1000;
+                    if (timeDeltaSec > 0) {
+                        const connDelta =
+                            currentStats.total -
+                            prevSocketStatsRef.current.total;
+                        const synDelta =
+                            currentStats.tcp_synrecv -
+                            prevSocketStatsRef.current.tcp_synrecv;
+
+                        setNetworkRates({
+                            connectionsPerSec: Math.max(
+                                0,
+                                connDelta / timeDeltaSec
+                            ),
+                            synPerSec: Math.max(0, synDelta / timeDeltaSec),
+                        });
+                    }
+                }
+
+                // Store current as previous for next calculation
+                prevSocketStatsRef.current = currentStats;
+
+                setSocketStats(currentStats);
+                // Update context
+                updateMonitoringData(sessionId, { socketStats: currentStats });
             } else {
                 console.error(
                     "Backend failed to get socket stats:",
@@ -447,12 +507,16 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                     tcp_timewait: 0,
                     tcp_synrecv: 0,
                     udp_total: 0,
+                    conntrack_current: 0,
+                    conntrack_max: 0,
+                    conntrack_percent: 0,
+                    timestamp_ms: 0,
                 });
             }
         } catch (error) {
             console.error("Failed to fetch socket stats:", error);
         }
-    }, [sessionId]);
+    }, [sessionId, updateMonitoringData]);
 
     useEffect(() => {
         if (!sessionId) return;
@@ -1226,7 +1290,7 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                 stroke="hsl(var(--muted-foreground))"
                                                 strokeWidth={1.5}
                                             />
-                                            <Tooltip
+                                            <RechartsTooltip
                                                 contentStyle={{
                                                     backgroundColor:
                                                         "hsl(var(--popover))",
@@ -1312,75 +1376,244 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                         </h3>
                     </div>
                     <Card>
-                        <CardContent className="p-2">
+                        <CardContent className="p-2 space-y-2">
                             {socketStats ? (
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="flex flex-col gap-0.5">
-                                        <div className="text-[9px] text-muted-foreground uppercase font-semibold">
-                                            Established
+                                <>
+                                    {/* Rate Metrics - Critical for spike detection */}
+                                    <div className="grid grid-cols-2 gap-2 pb-2 border-b border-border">
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1">
+                                                <div className="text-[9px] text-muted-foreground uppercase font-semibold">
+                                                    Conn/sec
+                                                </div>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="text-xs">Số kết nối mới mỗi giây</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                            <div
+                                                className={`text-[11px] font-mono font-bold ${
+                                                    networkRates.connectionsPerSec >
+                                                    100
+                                                        ? "text-red-500 animate-pulse"
+                                                        : networkRates.connectionsPerSec >
+                                                          50
+                                                        ? "text-orange-500"
+                                                        : "text-green-500"
+                                                }`}
+                                            >
+                                                {networkRates.connectionsPerSec.toFixed(
+                                                    1
+                                                )}
+                                            </div>
                                         </div>
-                                        <div
-                                            className={`text-[11px] font-mono font-bold ${
-                                                socketStats.tcp_established >
-                                                1000
-                                                    ? "text-orange-500"
-                                                    : socketStats.tcp_established >
-                                                      5000
-                                                    ? "text-red-500"
-                                                    : "text-green-500"
-                                            }`}
-                                        >
-                                            {socketStats.tcp_established}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <div className="text-[9px] text-muted-foreground uppercase font-semibold">
-                                            SYN_RECV
-                                        </div>
-                                        <div
-                                            className={`text-[11px] font-mono font-bold ${
-                                                socketStats.tcp_synrecv > 20
-                                                    ? "text-red-500 animate-pulse"
-                                                    : socketStats.tcp_synrecv >
-                                                      5
-                                                    ? "text-orange-500"
-                                                    : "text-green-500"
-                                            }`}
-                                            title={
-                                                socketStats.tcp_synrecv > 20
-                                                    ? "Possible SYN Flood / DDOS attack detected!"
-                                                    : ""
-                                            }
-                                        >
-                                            {socketStats.tcp_synrecv}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <div className="text-[9px] text-muted-foreground uppercase font-semibold">
-                                            TIME_WAIT
-                                        </div>
-                                        <div
-                                            className={`text-[11px] font-mono font-bold ${
-                                                socketStats.tcp_timewait > 5000
-                                                    ? "text-orange-500"
-                                                    : socketStats.tcp_timewait >
-                                                      20000
-                                                    ? "text-red-500"
-                                                    : "text-blue-500"
-                                            }`}
-                                        >
-                                            {socketStats.tcp_timewait}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5">
-                                        <div className="text-[9px] text-muted-foreground uppercase font-semibold">
-                                            Total Sockets
-                                        </div>
-                                        <div className="text-[11px] font-mono font-bold">
-                                            {socketStats.total}
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1">
+                                                <div className="text-[9px] text-muted-foreground uppercase font-semibold">
+                                                    SYN/sec
+                                                </div>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="text-xs">Số gói SYN mỗi giây (bắt đầu TCP handshake)</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                            <div
+                                                className={`text-[11px] font-mono font-bold ${
+                                                    networkRates.synPerSec > 10
+                                                        ? "text-red-500 animate-pulse"
+                                                        : networkRates.synPerSec >
+                                                          5
+                                                        ? "text-orange-500"
+                                                        : "text-green-500"
+                                                }`}
+                                            >
+                                                {networkRates.synPerSec.toFixed(
+                                                    1
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+
+                                    {/* Socket States */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1">
+                                                <div className="text-[9px] text-muted-foreground uppercase font-semibold">
+                                                    Established
+                                                </div>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="text-xs">Active TCP connections</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                            <div
+                                                className={`text-[11px] font-mono font-bold ${
+                                                    socketStats.tcp_established >
+                                                    5000
+                                                        ? "text-red-500"
+                                                        : socketStats.tcp_established >
+                                                          1000
+                                                        ? "text-orange-500"
+                                                        : "text-green-500"
+                                                }`}
+                                            >
+                                                {socketStats.tcp_established}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1">
+                                                <div className="text-[9px] text-muted-foreground uppercase font-semibold">
+                                                    SYN_RECV
+                                                </div>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="text-xs">Pending handshakes</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                            <div
+                                                className={`text-[11px] font-mono font-bold ${
+                                                    socketStats.tcp_synrecv > 20
+                                                        ? "text-red-500 animate-pulse"
+                                                        : socketStats.tcp_synrecv >
+                                                          5
+                                                        ? "text-orange-500"
+                                                        : "text-green-500"
+                                                }`}
+                                            >
+                                                {socketStats.tcp_synrecv}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1">
+                                                <div className="text-[9px] text-muted-foreground uppercase font-semibold">
+                                                    TIME_WAIT
+                                                </div>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="text-xs">Closed connections waiting - Normal for busy servers</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                            <div
+                                                className={`text-[11px] font-mono font-bold ${
+                                                    socketStats.tcp_timewait >
+                                                    20000
+                                                        ? "text-red-500"
+                                                        : socketStats.tcp_timewait >
+                                                          5000
+                                                        ? "text-orange-500"
+                                                        : "text-blue-500"
+                                                }`}
+                                            >
+                                                {socketStats.tcp_timewait}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1">
+                                                <div className="text-[9px] text-muted-foreground uppercase font-semibold">
+                                                    Total Sockets
+                                                </div>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="text-xs">Tổng socket kernel đang quản lý</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                            <div className="text-[11px] font-mono font-bold">
+                                                {socketStats.total}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* nf_conntrack - Critical for EC2/Linux */}
+                                    {socketStats.conntrack_max > 0 && (
+                                        <div className="pt-2 border-t border-border space-y-1">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-1">
+                                                    <div className="text-[9px] text-muted-foreground uppercase font-semibold">
+                                                        Conntrack Usage
+                                                    </div>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Info className="h-3 w-3 text-muted-foreground hover:text-foreground cursor-help" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p className="max-w-xs">
+                                                                Khả năng kernel
+                                                                nhận và quản lý
+                                                                KẾT NỐI MỚI
+                                                            </p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+                                                <div
+                                                    className={`text-[10px] font-mono font-bold ${
+                                                        socketStats.conntrack_percent >=
+                                                        90
+                                                            ? "text-red-500 animate-pulse"
+                                                            : socketStats.conntrack_percent >=
+                                                              75
+                                                            ? "text-orange-500"
+                                                            : socketStats.conntrack_percent >=
+                                                              50
+                                                            ? "text-yellow-500"
+                                                            : "text-green-500"
+                                                    }`}
+                                                    title={`nf_conntrack: ${socketStats.conntrack_current} / ${socketStats.conntrack_max} - If full, network dies even with low CPU/RAM!`}
+                                                >
+                                                    {socketStats.conntrack_percent.toFixed(
+                                                        1
+                                                    )}
+                                                    %
+                                                </div>
+                                            </div>
+                                            <Progress
+                                                value={
+                                                    socketStats.conntrack_percent
+                                                }
+                                                className={`h-1.5 ${
+                                                    socketStats.conntrack_percent >=
+                                                    90
+                                                        ? "[&>div]:bg-red-500"
+                                                        : socketStats.conntrack_percent >=
+                                                          75
+                                                        ? "[&>div]:bg-orange-500"
+                                                        : socketStats.conntrack_percent >=
+                                                          50
+                                                        ? "[&>div]:bg-yellow-500"
+                                                        : "[&>div]:bg-green-500"
+                                                }`}
+                                            />
+                                            <div className="text-[8px] text-muted-foreground text-right">
+                                                {socketStats.conntrack_current.toLocaleString()}{" "}
+                                                /{" "}
+                                                {socketStats.conntrack_max.toLocaleString()}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             ) : (
                                 <div className="flex items-center justify-center py-2">
                                     <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />

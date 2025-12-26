@@ -768,6 +768,12 @@ pub struct NetworkSocketStats {
     pub tcp_timewait: u32,
     pub tcp_synrecv: u32,
     pub udp_total: u32,
+    // nf_conntrack - critical for EC2/Linux servers
+    pub conntrack_current: u32,
+    pub conntrack_max: u32,
+    pub conntrack_percent: f32,
+    // Timestamp for rate calculation
+    pub timestamp_ms: u64,
 }
 
 #[derive(Debug, Serialize)]
@@ -789,9 +795,19 @@ pub async fn get_network_socket_stats(
 
     let client = session.read().await;
 
-    // Get socket stats using ss -s and also get SYN_RECV count specifically if not in ss -s summary
-    // Some versions of ss -s might not show synrecv in summary, so we use a combined approach
-    let command = "ss -s 2>/dev/null || echo 'Total: 0'; echo \"---SYNRECV---\"; ss -ant 2>/dev/null | grep -c SYN-RECV || echo 0";
+    // Get socket stats using ss -s, SYN_RECV count, and nf_conntrack info
+    // nf_conntrack is critical for EC2/Linux - if it fills up, network dies even with low CPU/RAM
+    let command = r#"
+ss -s 2>/dev/null || echo 'Total: 0'
+echo "---SYNRECV---"
+ss -ant 2>/dev/null | grep -c SYN-RECV || echo 0
+echo "---CONNTRACK---"
+cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null || echo 0
+echo "---CONNTRACK_MAX---"
+cat /proc/sys/net/netfilter/nf_conntrack_max 2>/dev/null || echo 0
+echo "---TIMESTAMP---"
+date +%s%3N 2>/dev/null || echo 0
+"#;
 
     match client.execute_command(command).await {
         Ok(output) => {
@@ -802,37 +818,64 @@ pub async fn get_network_socket_stats(
                 tcp_timewait: 0,
                 tcp_synrecv: 0,
                 udp_total: 0,
+                conntrack_current: 0,
+                conntrack_max: 0,
+                conntrack_percent: 0.0,
+                timestamp_ms: 0,
             };
 
-            let sections: Vec<&str> = output.split("---SYNRECV---").collect();
+            // Split by sections
+            let synrecv_split: Vec<&str> = output.split("---SYNRECV---").collect();
+            let ss_s_output = synrecv_split.get(0).unwrap_or(&"");
+            
+            let rest = synrecv_split.get(1).unwrap_or(&"");
+            let conntrack_split: Vec<&str> = rest.split("---CONNTRACK---").collect();
+            let synrecv_output = conntrack_split.get(0).unwrap_or(&"");
+            
+            let rest2 = conntrack_split.get(1).unwrap_or(&"");
+            let conntrack_max_split: Vec<&str> = rest2.split("---CONNTRACK_MAX---").collect();
+            let conntrack_current_output = conntrack_max_split.get(0).unwrap_or(&"");
+            
+            let rest3 = conntrack_max_split.get(1).unwrap_or(&"");
+            let timestamp_split: Vec<&str> = rest3.split("---TIMESTAMP---").collect();
+            let conntrack_max_output = timestamp_split.get(0).unwrap_or(&"");
+            let timestamp_output = timestamp_split.get(1).unwrap_or(&"");
             
             // Parse ss -s output
-            if let Some(ss_s_output) = sections.get(0) {
-                for line in ss_s_output.lines() {
-                    let line = line.trim();
-                    if line.starts_with("Total:") {
-                        stats.total = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
-                    } else if line.starts_with("TCP:") {
-                        // Format: TCP: 45 (estab 10, closed 5, orphaned 0, timewait 20)
-                        stats.tcp_total = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
-                        if let Some(estab_start) = line.find("estab ") {
-                            let rest = &line[estab_start + 6..];
-                            stats.tcp_established = rest.split(|c| c == ',' || c == ')').next().and_then(|s| s.trim().parse().ok()).unwrap_or(0);
-                        }
-                        if let Some(tw_start) = line.find("timewait ") {
-                            let rest = &line[tw_start + 9..];
-                            stats.tcp_timewait = rest.split(|c| c == ',' || c == ')').next().and_then(|s| s.trim().parse().ok()).unwrap_or(0);
-                        }
-                    } else if line.starts_with("UDP:") {
-                        stats.udp_total = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+            for line in ss_s_output.lines() {
+                let line = line.trim();
+                if line.starts_with("Total:") {
+                    stats.total = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                } else if line.starts_with("TCP:") {
+                    // Format: TCP: 45 (estab 10, closed 5, orphaned 0, timewait 20)
+                    stats.tcp_total = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                    if let Some(estab_start) = line.find("estab ") {
+                        let rest = &line[estab_start + 6..];
+                        stats.tcp_established = rest.split(|c| c == ',' || c == ')').next().and_then(|s| s.trim().parse().ok()).unwrap_or(0);
                     }
+                    if let Some(tw_start) = line.find("timewait ") {
+                        let rest = &line[tw_start + 9..];
+                        stats.tcp_timewait = rest.split(|c| c == ',' || c == ')').next().and_then(|s| s.trim().parse().ok()).unwrap_or(0);
+                    }
+                } else if line.starts_with("UDP:") {
+                    stats.udp_total = line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
                 }
             }
 
             // Parse SYN_RECV count
-            if let Some(synrecv_output) = sections.get(1) {
-                stats.tcp_synrecv = synrecv_output.trim().parse().unwrap_or(0);
+            stats.tcp_synrecv = synrecv_output.trim().parse().unwrap_or(0);
+            
+            // Parse conntrack data
+            stats.conntrack_current = conntrack_current_output.trim().parse().unwrap_or(0);
+            stats.conntrack_max = conntrack_max_output.trim().parse().unwrap_or(0);
+            
+            // Calculate conntrack percentage
+            if stats.conntrack_max > 0 {
+                stats.conntrack_percent = (stats.conntrack_current as f32 / stats.conntrack_max as f32) * 100.0;
             }
+            
+            // Parse timestamp
+            stats.timestamp_ms = timestamp_output.trim().parse().unwrap_or(0);
 
             Ok(NetworkSocketResponse {
                 success: true,
@@ -847,6 +890,7 @@ pub async fn get_network_socket_stats(
         }),
     }
 }
+
 
 // Network interface statistics
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
