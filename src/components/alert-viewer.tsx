@@ -154,12 +154,16 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
         AlertCategory | "all"
     >("all");
     const [expandedAlertId, setExpandedAlertId] = useState<string | null>(null);
-    
+
     // New states for history feature
     const [viewMode, setViewMode] = useState<"current" | "history">("current");
     const [alertHistory, setAlertHistory] = useState<HistoryAlert[]>([]);
-    const [historyExpanded, setHistoryExpanded] = useState<Record<string, boolean>>({});
-    const [historyDateFilter, setHistoryDateFilter] = useState<"all" | "today" | "week">("all");
+    const [historyExpanded, setHistoryExpanded] = useState<
+        Record<string, boolean>
+    >({});
+    const [historyDateFilter, setHistoryDateFilter] = useState<
+        "all" | "today" | "week"
+    >("all");
 
     // Refs for tracking previous data to detect anomalies
     const prevStatsRef = useRef<any>(null);
@@ -180,31 +184,40 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     }, []);
 
     // Save alert to history
-    const saveAlertToHistory = useCallback((alert: SystemAlert, currentSessionId: string) => {
-        const historyAlert: HistoryAlert = {
-            id: `${alert.id}-${Date.now()}`,
-            alertId: alert.id,
-            severity: alert.severity,
-            category: alert.category,
-            title: alert.title,
-            description: alert.description,
-            value: alert.value,
-            threshold: alert.threshold,
-            timestamp: alert.timestamp.toISOString(),
-            sessionId: currentSessionId,
-        };
+    const saveAlertToHistory = useCallback(
+        (alert: SystemAlert, currentSessionId: string) => {
+            const historyAlert: HistoryAlert = {
+                id: `${alert.id}-${Date.now()}`,
+                alertId: alert.id,
+                severity: alert.severity,
+                category: alert.category,
+                title: alert.title,
+                description: alert.description,
+                value: alert.value,
+                threshold: alert.threshold,
+                timestamp: alert.timestamp.toISOString(),
+                sessionId: currentSessionId,
+            };
 
-        setAlertHistory(prev => {
-            const updated = [historyAlert, ...prev].slice(0, MAX_HISTORY_ENTRIES);
-            // Save to localStorage
-            try {
-                localStorage.setItem(ALERT_HISTORY_KEY, JSON.stringify(updated));
-            } catch (error) {
-                console.error("Error saving alert history:", error);
-            }
-            return updated;
-        });
-    }, []);
+            setAlertHistory((prev) => {
+                const updated = [historyAlert, ...prev].slice(
+                    0,
+                    MAX_HISTORY_ENTRIES
+                );
+                // Save to localStorage
+                try {
+                    localStorage.setItem(
+                        ALERT_HISTORY_KEY,
+                        JSON.stringify(updated)
+                    );
+                } catch (error) {
+                    console.error("Error saving alert history:", error);
+                }
+                return updated;
+            });
+        },
+        []
+    );
 
     // Clear history
     const clearHistory = useCallback(() => {
@@ -225,27 +238,33 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
         const now = new Date();
 
         try {
-            // Fetch all data in parallel for better performance
-            const [
-                statsResult,
-                socketResult,
-                processResult,
-                diskResult,
-                securityResult,
-            ] = await Promise.all([
-                invoke<any>("get_system_stats", { sessionId }),
-                invoke<any>("get_network_socket_stats", { sessionId }),
-                invoke<any>("get_processes", {
-                    sessionId,
-                    sortBy: "cpu",
-                }),
-                invoke<any>("get_disk_usage", { sessionId }),
-                // Custom security checks
-                invoke<any>("ssh_execute_command", {
-                    sessionId,
-                    command: `echo "---SSH_FAILURES---"; grep -c "Failed password" /var/log/auth.log 2>/dev/null || grep -c "Failed password" /var/log/secure 2>/dev/null || echo "0"; echo "---ZOMBIE---"; ps aux | awk '$8=="Z"' | wc -l; echo "---OPEN_FILES---"; cat /proc/sys/fs/file-nr 2>/dev/null || echo "0 0 0"; echo "---OOM_KILLS---"; dmesg 2>/dev/null | grep -c "Out of memory" || echo "0"; echo "---DISK_IO_WAIT---"; cat /proc/stat 2>/dev/null | grep cpu | head -1 | awk '{total=$2+$3+$4+$5+$6+$7+$8; if(total>0) printf "%.1f", $6*100/total; else print "0"}'`,
-                }),
-            ]);
+            // Fetch critical system data first
+            const statsResult = await invoke<any>("get_system_stats", {
+                sessionId,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 200)); // Small delay
+
+            const socketResult = await invoke<any>("get_network_socket_stats", {
+                sessionId,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            const processResult = await invoke<any>("get_processes", {
+                sessionId,
+                sortBy: "cpu",
+            });
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            const diskResult = await invoke<any>("get_disk_usage", {
+                sessionId,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 500)); // Longer delay before security checks
+
+            // Security checks last - these can be more intensive
+            const securityResult = await invoke<any>("ssh_execute_command", {
+                sessionId,
+                command: `echo "---SSH_FAILURES---"; grep -c "Failed password" /var/log/auth.log 2>/dev/null || grep -c "Failed password" /var/log/secure 2>/dev/null || echo "0"; echo "---ZOMBIE---"; ps aux | awk '$8=="Z"' | wc -l; echo "---OPEN_FILES---"; cat /proc/sys/fs/file-nr 2>/dev/null || echo "0 0 0"; echo "---OOM_KILLS---"; dmesg 2>/dev/null | grep -c "Out of memory" || echo "0"; echo "---DISK_IO_WAIT---"; cat /proc/stat 2>/dev/null | grep cpu | head -1 | awk '{total=$2+$3+$4+$5+$6+$7+$8; if(total>0) printf "%.1f", $6*100/total; else print "0"}'`,
+            });
 
             // 1. Memory Alerts
             if (statsResult.success && statsResult.stats) {
@@ -712,17 +731,19 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
 
         // Save new alerts to history (avoid duplicates by checking if same alert was just saved)
         if (sessionId) {
-            const currentAlertKeys = new Set(newAlerts.map(a => `${a.id}-${a.value}`));
-            const newToSave = newAlerts.filter(alert => {
+            const currentAlertKeys = new Set(
+                newAlerts.map((a) => `${a.id}-${a.value}`)
+            );
+            const newToSave = newAlerts.filter((alert) => {
                 const key = `${alert.id}-${alert.value}`;
                 return !lastSavedAlertsRef.current.has(key);
             });
-            
+
             // Save each new alert to history
-            newToSave.forEach(alert => {
+            newToSave.forEach((alert) => {
                 saveAlertToHistory(alert, sessionId);
             });
-            
+
             // Update the ref with current alert keys
             lastSavedAlertsRef.current = currentAlertKeys;
         }
@@ -740,12 +761,18 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
             return;
         }
 
-        fetchAnomalies();
+        // Delay initial fetch to allow PTY session to initialize first
+        const initialFetchTimer = setTimeout(() => {
+            fetchAnomalies();
+        }, 3000); // Wait 3 seconds for PTY session to start
 
-        // Refresh every 15 seconds
-        const interval = setInterval(fetchAnomalies, 15000);
+        // Refresh every 30 seconds (increased from 15 to reduce load)
+        const interval = setInterval(fetchAnomalies, 30000);
 
-        return () => clearInterval(interval);
+        return () => {
+            clearTimeout(initialFetchTimer);
+            clearInterval(interval);
+        };
     }, [sessionId, fetchAnomalies]);
 
     // Filter alerts by category
@@ -796,17 +823,21 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
 
         // Filter by category
         if (selectedCategory !== "all") {
-            filtered = filtered.filter(h => h.category === selectedCategory);
+            filtered = filtered.filter((h) => h.category === selectedCategory);
         }
 
         // Filter by date
         const now = new Date();
         if (historyDateFilter === "today") {
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            filtered = filtered.filter(h => new Date(h.timestamp) >= today);
+            const today = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate()
+            );
+            filtered = filtered.filter((h) => new Date(h.timestamp) >= today);
         } else if (historyDateFilter === "week") {
             const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            filtered = filtered.filter(h => new Date(h.timestamp) >= weekAgo);
+            filtered = filtered.filter((h) => new Date(h.timestamp) >= weekAgo);
         }
 
         return filtered;
@@ -815,8 +846,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     // Group history by date for timeline view
     const groupedHistory = useMemo(() => {
         const groups: Record<string, HistoryAlert[]> = {};
-        
-        filteredHistory.forEach(alert => {
+
+        filteredHistory.forEach((alert) => {
             const date = new Date(alert.timestamp);
             const dateKey = date.toLocaleDateString("vi-VN", {
                 weekday: "long",
@@ -824,7 +855,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                 month: "long",
                 day: "numeric",
             });
-            
+
             if (!groups[dateKey]) {
                 groups[dateKey] = [];
             }
@@ -883,12 +914,14 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                     <Activity className="h-3 w-3" />
                     Hiện tại
                     {alerts.length > 0 && (
-                        <span className={cn(
-                            "px-1 py-0 text-[9px] rounded-full min-w-[16px] text-center",
-                            severityCounts.critical > 0 
-                                ? "bg-red-500/20 text-red-400" 
-                                : "bg-amber-500/20 text-amber-400"
-                        )}>
+                        <span
+                            className={cn(
+                                "px-1 py-0 text-[9px] rounded-full min-w-[16px] text-center",
+                                severityCounts.critical > 0
+                                    ? "bg-red-500/20 text-red-400"
+                                    : "bg-amber-500/20 text-amber-400"
+                            )}
+                        >
                             {alerts.length}
                         </span>
                     )}
@@ -949,7 +982,10 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         disabled={isLoading}
                     >
                         <RefreshCw
-                            className={cn("h-3 w-3", isLoading && "animate-spin")}
+                            className={cn(
+                                "h-3 w-3",
+                                isLoading && "animate-spin"
+                            )}
                         />
                     </Button>
                 </div>
@@ -1012,20 +1048,57 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
             <div className="flex flex-wrap gap-1">
                 {categories.map((cat) => {
                     // Count depends on current view mode
-                    const count = viewMode === "current"
-                        ? (cat.value === "all" ? alerts.length : categoryCounts[cat.value])
-                        : (cat.value === "all" 
-                            ? alertHistory.filter(h => 
-                                historyDateFilter === "all" || 
-                                (historyDateFilter === "today" && new Date(h.timestamp) >= new Date(new Date().setHours(0,0,0,0))) ||
-                                (historyDateFilter === "week" && new Date(h.timestamp) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-                            ).length
-                            : alertHistory.filter(h => 
-                                h.category === cat.value &&
-                                (historyDateFilter === "all" || 
-                                (historyDateFilter === "today" && new Date(h.timestamp) >= new Date(new Date().setHours(0,0,0,0))) ||
-                                (historyDateFilter === "week" && new Date(h.timestamp) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)))
-                            ).length);
+                    const count =
+                        viewMode === "current"
+                            ? cat.value === "all"
+                                ? alerts.length
+                                : categoryCounts[cat.value]
+                            : cat.value === "all"
+                            ? alertHistory.filter(
+                                  (h) =>
+                                      historyDateFilter === "all" ||
+                                      (historyDateFilter === "today" &&
+                                          new Date(h.timestamp) >=
+                                              new Date(
+                                                  new Date().setHours(
+                                                      0,
+                                                      0,
+                                                      0,
+                                                      0
+                                                  )
+                                              )) ||
+                                      (historyDateFilter === "week" &&
+                                          new Date(h.timestamp) >=
+                                              new Date(
+                                                  Date.now() -
+                                                      7 * 24 * 60 * 60 * 1000
+                                              ))
+                              ).length
+                            : alertHistory.filter(
+                                  (h) =>
+                                      h.category === cat.value &&
+                                      (historyDateFilter === "all" ||
+                                          (historyDateFilter === "today" &&
+                                              new Date(h.timestamp) >=
+                                                  new Date(
+                                                      new Date().setHours(
+                                                          0,
+                                                          0,
+                                                          0,
+                                                          0
+                                                      )
+                                                  )) ||
+                                          (historyDateFilter === "week" &&
+                                              new Date(h.timestamp) >=
+                                                  new Date(
+                                                      Date.now() -
+                                                          7 *
+                                                              24 *
+                                                              60 *
+                                                              60 *
+                                                              1000
+                                                  )))
+                              ).length;
                     const isActive = selectedCategory === cat.value;
 
                     return (
@@ -1070,12 +1143,15 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                     Không phát hiện bất thường
                                 </p>
                                 <p className="text-[10px] text-muted-foreground/60 mt-1">
-                                    Cập nhật lúc {lastUpdated.toLocaleTimeString()}
+                                    Cập nhật lúc{" "}
+                                    {lastUpdated.toLocaleTimeString()}
                                 </p>
                             </div>
                         ) : (
                             filteredAlerts.map((alert) => {
-                                const styles = getSeverityStyles(alert.severity);
+                                const styles = getSeverityStyles(
+                                    alert.severity
+                                );
                                 const Icon = getCategoryIcon(alert.category);
                                 const isExpanded = expandedAlertId === alert.id;
 
@@ -1128,7 +1204,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                                     {isExpanded && (
                                                         <div className="mt-1.5 space-y-1.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
                                                             <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                                                {alert.description}
+                                                                {
+                                                                    alert.description
+                                                                }
                                                             </p>
                                                             <div className="flex items-center gap-2 text-[9px]">
                                                                 {alert.value && (
@@ -1198,131 +1276,162 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {Object.entries(groupedHistory).map(([dateKey, alerts]) => (
-                                <div key={dateKey} className="space-y-1">
-                                    {/* Date Header */}
-                                    <div className="flex items-center gap-2 px-1 py-1 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-                                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                                        <span className="text-[10px] font-medium text-muted-foreground">
-                                            {dateKey}
-                                        </span>
-                                        <span className="text-[9px] text-muted-foreground/60">
-                                            ({alerts.length} cảnh báo)
-                                        </span>
-                                    </div>
+                            {Object.entries(groupedHistory).map(
+                                ([dateKey, alerts]) => (
+                                    <div key={dateKey} className="space-y-1">
+                                        {/* Date Header */}
+                                        <div className="flex items-center gap-2 px-1 py-1 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+                                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                                            <span className="text-[10px] font-medium text-muted-foreground">
+                                                {dateKey}
+                                            </span>
+                                            <span className="text-[9px] text-muted-foreground/60">
+                                                ({alerts.length} cảnh báo)
+                                            </span>
+                                        </div>
 
-                                    {/* Timeline */}
-                                    <div className="relative pl-4 border-l-2 border-border/50 ml-1.5 space-y-1">
-                                        {alerts.map((historyAlert) => {
-                                            const styles = getSeverityStyles(historyAlert.severity);
-                                            const Icon = getCategoryIcon(historyAlert.category);
-                                            const isExpanded = historyExpanded[historyAlert.id] || false;
+                                        {/* Timeline */}
+                                        <div className="relative pl-4 border-l-2 border-border/50 ml-1.5 space-y-1">
+                                            {alerts.map((historyAlert) => {
+                                                const styles =
+                                                    getSeverityStyles(
+                                                        historyAlert.severity
+                                                    );
+                                                const Icon = getCategoryIcon(
+                                                    historyAlert.category
+                                                );
+                                                const isExpanded =
+                                                    historyExpanded[
+                                                        historyAlert.id
+                                                    ] || false;
 
-                                            return (
-                                                <div
-                                                    key={historyAlert.id}
-                                                    className="relative"
-                                                >
-                                                    {/* Alert Card */}
-                                                    <Card
-                                                        className={cn(
-                                                            "cursor-pointer transition-all duration-200 border rounded-md",
-                                                            styles.bg,
-                                                            styles.border,
-                                                            isExpanded && styles.glow,
-                                                            "hover:shadow-md"
-                                                        )}
-                                                        onClick={() =>
-                                                            setHistoryExpanded(prev => ({
-                                                                ...prev,
-                                                                [historyAlert.id]: !isExpanded
-                                                            }))
-                                                        }
+                                                return (
+                                                    <div
+                                                        key={historyAlert.id}
+                                                        className="relative"
                                                     >
-                                                        <CardContent className="p-2">
-                                                            <div className="flex items-start gap-2">
-                                                                <div
-                                                                    className={cn(
-                                                                        "mt-0.5 shrink-0",
-                                                                        styles.icon
-                                                                    )}
-                                                                >
-                                                                    <Icon className="h-3.5 w-3.5" />
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="flex items-center justify-between gap-1">
-                                                                        <span
-                                                                            className={cn(
-                                                                                "text-[11px] font-medium truncate",
-                                                                                styles.text
-                                                                            )}
-                                                                        >
-                                                                            {historyAlert.title}
-                                                                        </span>
-                                                                        <div className="flex items-center gap-1 shrink-0">
-                                                                            <span className="text-[9px] text-muted-foreground font-mono">
-                                                                                {formatTime(historyAlert.timestamp)}
-                                                                            </span>
-                                                                            <ChevronRight
-                                                                                className={cn(
-                                                                                    "h-3 w-3 transition-transform",
-                                                                                    styles.text,
-                                                                                    isExpanded && "rotate-90"
-                                                                                )}
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {isExpanded && (
-                                                                        <div className="mt-1.5 space-y-1.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                                                                            <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                                                                {historyAlert.description}
-                                                                            </p>
-                                                                            <div className="flex flex-wrap items-center gap-2 text-[9px]">
-                                                                                {historyAlert.value && (
-                                                                                    <Badge
-                                                                                        variant="outline"
-                                                                                        className={cn(
-                                                                                            "text-[9px] px-1 py-0 font-mono",
-                                                                                            styles.badge
-                                                                                        )}
-                                                                                    >
-                                                                                        {historyAlert.value}
-                                                                                    </Badge>
-                                                                                )}
-                                                                                {historyAlert.threshold && (
-                                                                                    <span className="text-muted-foreground">
-                                                                                        Ngưỡng: {historyAlert.threshold}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="flex items-center gap-1 text-[9px] text-muted-foreground/60">
-                                                                                <Clock className="h-2.5 w-2.5" />
-                                                                                {formatRelativeTime(historyAlert.timestamp)}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                {historyAlert.value && !isExpanded && (
-                                                                    <Badge
-                                                                        variant="outline"
+                                                        {/* Alert Card */}
+                                                        <Card
+                                                            className={cn(
+                                                                "cursor-pointer transition-all duration-200 border rounded-md",
+                                                                styles.bg,
+                                                                styles.border,
+                                                                isExpanded &&
+                                                                    styles.glow,
+                                                                "hover:shadow-md"
+                                                            )}
+                                                            onClick={() =>
+                                                                setHistoryExpanded(
+                                                                    (prev) => ({
+                                                                        ...prev,
+                                                                        [historyAlert.id]:
+                                                                            !isExpanded,
+                                                                    })
+                                                                )
+                                                            }
+                                                        >
+                                                            <CardContent className="p-2">
+                                                                <div className="flex items-start gap-2">
+                                                                    <div
                                                                         className={cn(
-                                                                            "text-[9px] px-1 py-0 font-mono shrink-0",
-                                                                            styles.badge
+                                                                            "mt-0.5 shrink-0",
+                                                                            styles.icon
                                                                         )}
                                                                     >
-                                                                        {historyAlert.value}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        </CardContent>
-                                                    </Card>
-                                                </div>
-                                            );
-                                        })}
+                                                                        <Icon className="h-3.5 w-3.5" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center justify-between gap-1">
+                                                                            <span
+                                                                                className={cn(
+                                                                                    "text-[11px] font-medium truncate",
+                                                                                    styles.text
+                                                                                )}
+                                                                            >
+                                                                                {
+                                                                                    historyAlert.title
+                                                                                }
+                                                                            </span>
+                                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                                <span className="text-[9px] text-muted-foreground font-mono">
+                                                                                    {formatTime(
+                                                                                        historyAlert.timestamp
+                                                                                    )}
+                                                                                </span>
+                                                                                <ChevronRight
+                                                                                    className={cn(
+                                                                                        "h-3 w-3 transition-transform",
+                                                                                        styles.text,
+                                                                                        isExpanded &&
+                                                                                            "rotate-90"
+                                                                                    )}
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {isExpanded && (
+                                                                            <div className="mt-1.5 space-y-1.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                                                                                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                                                                    {
+                                                                                        historyAlert.description
+                                                                                    }
+                                                                                </p>
+                                                                                <div className="flex flex-wrap items-center gap-2 text-[9px]">
+                                                                                    {historyAlert.value && (
+                                                                                        <Badge
+                                                                                            variant="outline"
+                                                                                            className={cn(
+                                                                                                "text-[9px] px-1 py-0 font-mono",
+                                                                                                styles.badge
+                                                                                            )}
+                                                                                        >
+                                                                                            {
+                                                                                                historyAlert.value
+                                                                                            }
+                                                                                        </Badge>
+                                                                                    )}
+                                                                                    {historyAlert.threshold && (
+                                                                                        <span className="text-muted-foreground">
+                                                                                            Ngưỡng:{" "}
+                                                                                            {
+                                                                                                historyAlert.threshold
+                                                                                            }
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="flex items-center gap-1 text-[9px] text-muted-foreground/60">
+                                                                                    <Clock className="h-2.5 w-2.5" />
+                                                                                    {formatRelativeTime(
+                                                                                        historyAlert.timestamp
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    {historyAlert.value &&
+                                                                        !isExpanded && (
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className={cn(
+                                                                                    "text-[9px] px-1 py-0 font-mono shrink-0",
+                                                                                    styles.badge
+                                                                                )}
+                                                                            >
+                                                                                {
+                                                                                    historyAlert.value
+                                                                                }
+                                                                            </Badge>
+                                                                        )}
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                )
+                            )}
                         </div>
                     )}
                 </ScrollArea>
@@ -1330,10 +1439,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
 
             {/* Last Updated Footer */}
             <div className="text-center text-[9px] text-muted-foreground/50 pt-1 border-t border-border/50">
-                {viewMode === "current" 
+                {viewMode === "current"
                     ? `Cập nhật mỗi 15 giây • ${lastUpdated.toLocaleTimeString()}`
-                    : `${filteredHistory.length} cảnh báo trong lịch sử`
-                }
+                    : `${filteredHistory.length} cảnh báo trong lịch sử`}
             </div>
         </div>
     );

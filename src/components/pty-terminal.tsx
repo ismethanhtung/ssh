@@ -159,6 +159,48 @@ export function PtyTerminal({
             console.log(
                 `[PTY Terminal] [${sessionId}] Connecting to WebSocket...`
             );
+
+            // Wait for WebSocket server to be ready
+            const checkServerReady = async (retries = 0): Promise<void> => {
+                if (retries >= 20) { // Max 10 seconds
+                    throw new Error("WebSocket server not ready after 10 seconds");
+                }
+
+                try {
+                    // Try to connect briefly to check if server is listening
+                    const testWs = new WebSocket("ws://127.0.0.1:9001");
+                    await new Promise<void>((resolve, reject) => {
+                        const timer = setTimeout(() => {
+                            testWs.close();
+                            reject(new Error("Connection timeout"));
+                        }, 1000);
+
+                        testWs.onopen = () => {
+                            clearTimeout(timer);
+                            testWs.close();
+                            resolve();
+                        };
+
+                        testWs.onerror = () => {
+                            clearTimeout(timer);
+                            reject(new Error("Connection failed"));
+                        };
+                    });
+                } catch (error) {
+                    console.log(`[PTY Terminal] [${sessionId}] WebSocket server not ready, retrying... (${retries + 1}/20)`);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    return checkServerReady(retries + 1);
+                }
+            };
+
+            try {
+                await checkServerReady();
+                console.log(`[PTY Terminal] [${sessionId}] WebSocket server is ready`);
+            } catch (error) {
+                console.warn(`[PTY Terminal] [${sessionId}] ${error.message}, proceeding anyway`);
+                term.write("\r\n\x1b[33m[Warning: WebSocket server may not be ready]\x1b[0m\r\n");
+            }
+
             const ws = new WebSocket("ws://127.0.0.1:9001");
             wsRef.current = ws;
 
@@ -296,11 +338,24 @@ export function PtyTerminal({
                     term.write(
                         "\r\n\x1b[33m[Connection closed. Attempting to reconnect...]\x1b[0m\r\n"
                     );
-                    setTimeout(() => {
-                        if (isRunning) {
-                            connectWebSocket();
-                        }
-                    }, 2000);
+                    // Exponential backoff retry
+                    let retryCount = 0;
+                    const maxRetries = 10;
+                    const retryWithBackoff = () => {
+                        if (!isRunning || retryCount >= maxRetries) return;
+
+                        retryCount++;
+                        const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); // Max 30 seconds
+
+                        setTimeout(() => {
+                            if (isRunning) {
+                                console.log(`[PTY Terminal] Retry ${retryCount}/${maxRetries} after ${delay}ms`);
+                                term.write(`\r\n\x1b[33m[Retry ${retryCount}/${maxRetries}...]\x1b[0m\r\n`);
+                                connectWebSocket();
+                            }
+                        }, delay);
+                    };
+                    retryWithBackoff();
                 }
             };
         };
