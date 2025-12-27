@@ -1023,32 +1023,32 @@ function AppContent() {
                             <ResizablePanel
                                 defaultSize={layout.rightSidebarSize}
                                 minSize={15}
-                                maxSize={30}
+                                maxSize={200}
                                 onResize={(size) => setRightSidebarSize(size)}
                             >
                                 <Tabs
                                     defaultValue="monitor"
                                     className="h-full flex flex-col"
                                 >
-                                    <div className="px-3 py-2 border-b border-border">
-                                        <TabsList className="h-7 w-full justify-start bg-transparent p-0 gap-2">
+                                    <div className="px-3 py-1.5 border-b border-border">
+                                        <TabsList className="h-8 w-full justify-start bg-transparent p-0 gap-1">
                                             <TabsTrigger
                                                 value="monitor"
-                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
+                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground transition-all"
                                             >
                                                 Monitor
                                             </TabsTrigger>
 
                                             <TabsTrigger
                                                 value="logs"
-                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
+                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground transition-all"
                                             >
                                                 Logs
                                             </TabsTrigger>
 
                                             <TabsTrigger
                                                 value="alerts"
-                                                className="px-3 h-7 text-xs rounded-md data-[state=active]:bg-muted"
+                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground transition-all"
                                             >
                                                 Alerts
                                             </TabsTrigger>

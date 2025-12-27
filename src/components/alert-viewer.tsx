@@ -428,8 +428,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         severity: "warning",
                         category: "security",
                         title: "SYN_RECV Spike",
-                        description:
-                            "Abnormal spike in SYN_RECV connections.",
+                        description: "Abnormal spike in SYN_RECV connections.",
                         value: `${tcp_synrecv}`,
                         threshold: `>${THRESHOLDS.synRecv.warning}`,
                         timestamp: now,
@@ -455,7 +454,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         severity: "warning",
                         category: "network",
                         title: "High TIME_WAIT connections",
-                        description: "Number of TIME_WAIT connections is increasing.",
+                        description:
+                            "Number of TIME_WAIT connections is increasing.",
                         value: `${tcp_timewait}`,
                         threshold: `>${THRESHOLDS.timeWait.warning}`,
                         timestamp: now,
@@ -565,7 +565,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                 0,
                                 20
                             )}...`,
-                            description: `PID ${proc.pid} is using a very high amount of CPU.`,
+                            description: `Process "${proc.command}" (PID ${
+                                proc.pid
+                            }) is using ${cpuVal.toFixed(1)}% CPU.`,
                             value: `${cpuVal.toFixed(1)}%`,
                             threshold: `>${THRESHOLDS.processCpu.critical}%`,
                             timestamp: now,
@@ -581,7 +583,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                 0,
                                 20
                             )}...`,
-                            description: `PID ${proc.pid} is using a very high amount of RAM.`,
+                            description: `Process "${proc.command}" (PID ${
+                                proc.pid
+                            }) is using ${memVal.toFixed(1)}% RAM.`,
                             value: `${memVal.toFixed(1)}%`,
                             threshold: `>${THRESHOLDS.processMemory.critical}%`,
                             timestamp: now,
@@ -595,7 +599,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                 0,
                                 20
                             )}...`,
-                            description: `PID ${proc.pid} is using high RAM.`,
+                            description: `Process "${proc.command}" (PID ${
+                                proc.pid
+                            }) is using ${memVal.toFixed(1)}% RAM.`,
                             value: `${memVal.toFixed(1)}%`,
                             threshold: `>${THRESHOLDS.processMemory.warning}%`,
                             timestamp: now,
@@ -1013,9 +1019,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                         </AlertDialogTitle>
                                         <AlertDialogDescription>
                                             Are you sure you want to delete all
-                                            alert history (
-                                            {alertHistory.length} items)? This
-                                            action cannot be undone.
+                                            alert history ({alertHistory.length}{" "}
+                                            items)? This action cannot be
+                                            undone.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
