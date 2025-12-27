@@ -263,9 +263,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "memory-critical",
                         severity: "critical",
                         category: "memory",
-                        title: "RAM sắp cạn kiệt",
+                        title: "RAM running low",
                         description:
-                            "Bộ nhớ RAM đang ở mức nguy hiểm. Hệ thống có thể bị chậm hoặc crash.",
+                            "RAM usage is at a dangerous level. System may slow down or crash.",
                         value: `${memoryPercent.toFixed(1)}%`,
                         threshold: `>${THRESHOLDS.memory.critical}%`,
                         timestamp: now,
@@ -275,9 +275,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "memory-warning",
                         severity: "warning",
                         category: "memory",
-                        title: "RAM sử dụng cao",
+                        title: "High RAM usage",
                         description:
-                            "Bộ nhớ RAM đang sử dụng nhiều. Nên theo dõi và cân nhắc giải phóng bộ nhớ.",
+                            "High RAM usage detected. Consider monitoring or freeing up memory.",
                         value: `${memoryPercent.toFixed(1)}%`,
                         threshold: `>${THRESHOLDS.memory.warning}%`,
                         timestamp: now,
@@ -292,9 +292,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: "swap-critical",
                             severity: "critical",
                             category: "memory",
-                            title: "Swap sử dụng quá cao",
+                            title: "Swap usage too high",
                             description:
-                                "Swap đang được sử dụng nhiều. Hệ thống có thể rất chậm do disk I/O.",
+                                "High swap usage. System performance may degrade due to disk I/O.",
                             value: `${swapPercent.toFixed(1)}%`,
                             threshold: `>${THRESHOLDS.swap.critical}%`,
                             timestamp: now,
@@ -304,9 +304,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: "swap-warning",
                             severity: "warning",
                             category: "memory",
-                            title: "Swap đang được sử dụng",
+                            title: "Swap currently in use",
                             description:
-                                "Hệ thống đang dùng swap, có thể do thiếu RAM.",
+                                "System is using swap, potentially due to low physical memory.",
                             value: `${swapPercent.toFixed(1)}%`,
                             threshold: `>${THRESHOLDS.swap.warning}%`,
                             timestamp: now,
@@ -320,9 +320,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "cpu-critical",
                         severity: "critical",
                         category: "cpu",
-                        title: "CPU quá tải",
+                        title: "CPU overloaded",
                         description:
-                            "CPU đang ở mức sử dụng cực cao. Cần kiểm tra các process ngốn CPU.",
+                            "CPU usage is extremely high. Check for CPU-intensive processes.",
                         value: `${cpu_percent.toFixed(1)}%`,
                         threshold: `>${THRESHOLDS.cpu.critical}%`,
                         timestamp: now,
@@ -332,8 +332,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "cpu-warning",
                         severity: "warning",
                         category: "cpu",
-                        title: "CPU sử dụng cao",
-                        description: "CPU đang hoạt động ở mức cao.",
+                        title: "High CPU usage",
+                        description: "CPU is operating at a high level.",
                         value: `${cpu_percent.toFixed(1)}%`,
                         threshold: `>${THRESHOLDS.cpu.warning}%`,
                         timestamp: now,
@@ -347,9 +347,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "iowait-critical",
                         severity: "critical",
                         category: "cpu",
-                        title: "I/O Wait cực cao",
+                        title: "Extremely high I/O Wait",
                         description:
-                            "CPU đang phải chờ I/O rất nhiều. Có thể disk đang quá tải hoặc gặp vấn đề.",
+                            "CPU is waiting heavily on I/O. Disk might be overloaded or experiencing issues.",
                         value: `${iowait.toFixed(1)}%`,
                         threshold: `>${THRESHOLDS.iowait.critical}%`,
                         timestamp: now,
@@ -359,9 +359,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "iowait-warning",
                         severity: "warning",
                         category: "cpu",
-                        title: "I/O Wait cao",
+                        title: "High I/O Wait",
                         description:
-                            "CPU đang chờ I/O nhiều. Kiểm tra disk hoạt động.",
+                            "CPU is waiting on I/O. Check disk activity.",
                         value: `${iowait.toFixed(1)}%`,
                         threshold: `>${THRESHOLDS.iowait.warning}%`,
                         timestamp: now,
@@ -378,10 +378,10 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "load-critical",
                         severity: "critical",
                         category: "cpu",
-                        title: "Load Average rất cao",
+                        title: "Very high Load Average",
                         description: `Load average (${load1m.toFixed(
                             2
-                        )}) vượt xa số cores (${cores}). Hệ thống đang quá tải.`,
+                        )}) far exceeds the number of cores (${cores}). System is overloaded.`,
                         value: `${load1m.toFixed(2)}`,
                         threshold: `>${(
                             cores * THRESHOLDS.loadAverage.critical
@@ -393,8 +393,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "load-warning",
                         severity: "warning",
                         category: "cpu",
-                        title: "Load Average cao",
-                        description: `Load average đang cao so với số cores.`,
+                        title: "High Load Average",
+                        description: `Load average is high relative to the number of cores.`,
                         value: `${load1m.toFixed(2)}`,
                         threshold: `>${(
                             cores * THRESHOLDS.loadAverage.warning
@@ -417,7 +417,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         category: "security",
                         title: "Possible SYN Flood Attack",
                         description:
-                            "Số lượng SYN_RECV connections rất cao. Có thể đang bị DDoS attack.",
+                            "Extremely high number of SYN_RECV connections. Potential DDoS attack.",
                         value: `${tcp_synrecv}`,
                         threshold: `>${THRESHOLDS.synRecv.critical}`,
                         timestamp: now,
@@ -429,7 +429,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         category: "security",
                         title: "SYN_RECV Spike",
                         description:
-                            "Số SYN_RECV connections tăng cao bất thường.",
+                            "Abnormal spike in SYN_RECV connections.",
                         value: `${tcp_synrecv}`,
                         threshold: `>${THRESHOLDS.synRecv.warning}`,
                         timestamp: now,
@@ -442,9 +442,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "timewait-critical",
                         severity: "critical",
                         category: "network",
-                        title: "TIME_WAIT connections quá nhiều",
+                        title: "Too many TIME_WAIT connections",
                         description:
-                            "Quá nhiều connections ở trạng thái TIME_WAIT. Có thể cạn kiệt ephemeral ports.",
+                            "Too many connections in TIME_WAIT state. Risk of ephemeral port exhaustion.",
                         value: `${tcp_timewait}`,
                         threshold: `>${THRESHOLDS.timeWait.critical}`,
                         timestamp: now,
@@ -454,8 +454,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "timewait-warning",
                         severity: "warning",
                         category: "network",
-                        title: "TIME_WAIT connections cao",
-                        description: "Số TIME_WAIT connections đang tăng.",
+                        title: "High TIME_WAIT connections",
+                        description: "Number of TIME_WAIT connections is increasing.",
                         value: `${tcp_timewait}`,
                         threshold: `>${THRESHOLDS.timeWait.warning}`,
                         timestamp: now,
@@ -468,9 +468,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "established-critical",
                         severity: "critical",
                         category: "network",
-                        title: "Quá nhiều connections",
+                        title: "Too many connections",
                         description:
-                            "Số lượng TCP connections established rất cao.",
+                            "Very high number of established TCP connections.",
                         value: `${tcp_established}`,
                         threshold: `>${THRESHOLDS.established.critical}`,
                         timestamp: now,
@@ -480,9 +480,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                         id: "established-warning",
                         severity: "warning",
                         category: "network",
-                        title: "Nhiều connections active",
+                        title: "Many active connections",
                         description:
-                            "Số TCP connections đang cao hơn bình thường.",
+                            "Number of active TCP connections is higher than normal.",
                         value: `${tcp_established}`,
                         threshold: `>${THRESHOLDS.established.warning}`,
                         timestamp: now,
@@ -498,8 +498,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: `disk-critical-${disk.path}`,
                             severity: "critical",
                             category: "disk",
-                            title: `Disk ${disk.path} sắp đầy`,
-                            description: `Phân vùng ${disk.path} gần hết dung lượng.`,
+                            title: `Disk ${disk.path} almost full`,
+                            description: `Partition ${disk.path} is running out of space.`,
                             value: `${disk.usage}%`,
                             threshold: `>${THRESHOLDS.disk.critical}%`,
                             timestamp: now,
@@ -509,8 +509,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: `disk-warning-${disk.path}`,
                             severity: "warning",
                             category: "disk",
-                            title: `Disk ${disk.path} sử dụng nhiều`,
-                            description: `Phân vùng ${disk.path} đang sử dụng nhiều.`,
+                            title: `High usage on disk ${disk.path}`,
+                            description: `Partition ${disk.path} has high disk usage.`,
                             value: `${disk.usage}%`,
                             threshold: `>${THRESHOLDS.disk.warning}%`,
                             timestamp: now,
@@ -526,8 +526,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: `inodes-critical-${disk.path}`,
                             severity: "critical",
                             category: "disk",
-                            title: `Inodes ${disk.path} sắp hết`,
-                            description: `Số inodes trên ${disk.path} gần cạn kiệt.`,
+                            title: `Inodes ${disk.path} running low`,
+                            description: `Inodes on ${disk.path} are nearly exhausted.`,
                             value: `${disk.inodes_usage}%`,
                             threshold: `>${THRESHOLDS.inodes.critical}%`,
                             timestamp: now,
@@ -540,8 +540,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: `inodes-warning-${disk.path}`,
                             severity: "warning",
                             category: "disk",
-                            title: `Inodes ${disk.path} sử dụng cao`,
-                            description: `Số inodes đang sử dụng nhiều.`,
+                            title: `High Inode usage on ${disk.path}`,
+                            description: `High number of inodes are in use.`,
                             value: `${disk.inodes_usage}%`,
                             threshold: `>${THRESHOLDS.inodes.warning}%`,
                             timestamp: now,
@@ -561,11 +561,11 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: `proc-cpu-critical-${proc.pid}`,
                             severity: "critical",
                             category: "process",
-                            title: `Process ngốn CPU: ${proc.command.slice(
+                            title: `CPU intensive process: ${proc.command.slice(
                                 0,
                                 20
                             )}...`,
-                            description: `PID ${proc.pid} đang sử dụng CPU rất cao.`,
+                            description: `PID ${proc.pid} is using a very high amount of CPU.`,
                             value: `${cpuVal.toFixed(1)}%`,
                             threshold: `>${THRESHOLDS.processCpu.critical}%`,
                             timestamp: now,
@@ -577,11 +577,11 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: `proc-mem-critical-${proc.pid}`,
                             severity: "critical",
                             category: "process",
-                            title: `Process ngốn RAM: ${proc.command.slice(
+                            title: `RAM intensive process: ${proc.command.slice(
                                 0,
                                 20
                             )}...`,
-                            description: `PID ${proc.pid} đang sử dụng RAM rất cao.`,
+                            description: `PID ${proc.pid} is using a very high amount of RAM.`,
                             value: `${memVal.toFixed(1)}%`,
                             threshold: `>${THRESHOLDS.processMemory.critical}%`,
                             timestamp: now,
@@ -591,11 +591,11 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: `proc-mem-warning-${proc.pid}`,
                             severity: "warning",
                             category: "process",
-                            title: `Process dùng nhiều RAM: ${proc.command.slice(
+                            title: `High RAM usage process: ${proc.command.slice(
                                 0,
                                 20
                             )}...`,
-                            description: `PID ${proc.pid} đang sử dụng RAM cao.`,
+                            description: `PID ${proc.pid} is using high RAM.`,
                             value: `${memVal.toFixed(1)}%`,
                             threshold: `>${THRESHOLDS.processMemory.warning}%`,
                             timestamp: now,
@@ -623,8 +623,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             category: "security",
                             title: "SSH Brute Force Attack",
                             description:
-                                "Phát hiện nhiều lần đăng nhập SSH thất bại. Có thể đang bị tấn công brute force.",
-                            value: `${failedLogins} lần`,
+                                "Multiple failed SSH login attempts detected. Potential brute force attack.",
+                            value: `${failedLogins} times`,
                             threshold: `>${THRESHOLDS.sshFailedLogins.critical}`,
                             timestamp: now,
                         });
@@ -637,8 +637,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             category: "security",
                             title: "SSH Login Failures",
                             description:
-                                "Có một số lần đăng nhập SSH thất bại gần đây.",
-                            value: `${failedLogins} lần`,
+                                "Several failed SSH login attempts detected recently.",
+                            value: `${failedLogins} times`,
                             threshold: `>${THRESHOLDS.sshFailedLogins.warning}`,
                             timestamp: now,
                         });
@@ -658,9 +658,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: "zombie-critical",
                             severity: "critical",
                             category: "process",
-                            title: "Nhiều Zombie Processes",
+                            title: "Multiple Zombie Processes",
                             description:
-                                "Phát hiện nhiều zombie processes. Có thể có vấn đề với parent processes.",
+                                "Multiple zombie processes detected. Potential issue with parent processes.",
                             value: `${zombies}`,
                             threshold: `>${THRESHOLDS.zombieProcesses.critical}`,
                             timestamp: now,
@@ -672,7 +672,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             category: "process",
                             title: "Zombie Processes",
                             description:
-                                "Có một số zombie processes trong hệ thống.",
+                                "Some zombie processes detected in the system.",
                             value: `${zombies}`,
                             threshold: `>${THRESHOLDS.zombieProcesses.warning}`,
                             timestamp: now,
@@ -693,10 +693,10 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             id: "oom-kill",
                             severity: "critical",
                             category: "memory",
-                            title: "OOM Killer đã hoạt động",
+                            title: "OOM Killer triggered",
                             description:
-                                "Kernel đã kill processes do hết bộ nhớ. Cần tăng RAM hoặc giảm load.",
-                            value: `${oomKills} lần`,
+                                "Kernel killed processes due to lack of memory. Consider increasing RAM or reducing load.",
+                            value: `${oomKills} times`,
                             threshold: ">0",
                             timestamp: now,
                         });
@@ -831,12 +831,12 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     }, [alertHistory, selectedCategory, historyDateFilter]);
 
     const categories: { value: AlertCategory | "all"; label: string }[] = [
-        { value: "all", label: "Tất cả" },
-        { value: "security", label: "Bảo mật" },
+        { value: "all", label: "All" },
+        { value: "security", label: "Security" },
         { value: "memory", label: "RAM" },
         { value: "cpu", label: "CPU" },
         { value: "disk", label: "Disk" },
-        { value: "network", label: "Mạng" },
+        { value: "network", label: "Network" },
         { value: "process", label: "Process" },
     ];
 
@@ -846,7 +846,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
 
         filteredHistory.forEach((alert) => {
             const date = new Date(alert.timestamp);
-            const dateKey = date.toLocaleDateString("vi-VN", {
+            const dateKey = date.toLocaleDateString("en-US", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
@@ -865,7 +865,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     // Format time for display
     const formatTime = (isoString: string) => {
         const date = new Date(isoString);
-        return date.toLocaleTimeString("vi-VN", {
+        return date.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit",
@@ -881,16 +881,16 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
         const diffHours = Math.floor(diffMs / 3600000);
         const diffDays = Math.floor(diffMs / 86400000);
 
-        if (diffMins < 1) return "Vừa xong";
-        if (diffMins < 60) return `${diffMins} phút trước`;
-        if (diffHours < 24) return `${diffHours} giờ trước`;
-        return `${diffDays} ngày trước`;
+        if (diffMins < 1) return "Just now";
+        if (diffMins < 60) return `${diffMins} minutes ago`;
+        if (diffHours < 24) return `${diffHours} hours ago`;
+        return `${diffDays} days ago`;
     };
 
     if (!sessionId) {
         return (
             <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                Không có session kết nối
+                No active session
             </div>
         );
     }
@@ -916,7 +916,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                 key={cat.value}
                                 onClick={() => setSelectedCategory(cat.value)}
                                 className={cn(
-                                    "px-2 py-0.5 text-[10px] rounded-md transition-all",
+                                    "px-2 py-0.5 text-[10px] rounded-sm transition-all",
                                     isActive
                                         ? "bg-primary text-primary-foreground"
                                         : "bg-muted/50 text-muted-foreground hover:bg-muted"
@@ -946,7 +946,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                     : "text-muted-foreground hover:bg-muted"
                             )}
                         >
-                            Tất cả
+                            All
                         </button>
                         <button
                             onClick={() => setHistoryDateFilter("today")}
@@ -957,7 +957,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                     : "text-muted-foreground hover:bg-muted"
                             )}
                         >
-                            Hôm nay
+                            Today
                         </button>
                         <button
                             onClick={() => setHistoryDateFilter("week")}
@@ -968,13 +968,13 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                     : "text-muted-foreground hover:bg-muted"
                             )}
                         >
-                            7 ngày
+                            7 days
                         </button>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
                             <Clock className="h-2.5 w-2.5" />
-                            Cập nhật {lastUpdated.toLocaleTimeString()}
+                            Updated {lastUpdated.toLocaleTimeString()}
                         </div>
                         <Button
                             variant="ghost"
@@ -982,7 +982,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             className="h-6 w-6"
                             onClick={fetchAnomalies}
                             disabled={isLoading}
-                            title="Làm mới dữ liệu"
+                            title="Refresh data"
                         >
                             <RefreshCw
                                 className={cn(
@@ -1001,7 +1001,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                         variant="ghost"
                                         size="icon"
                                         className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                        title="Xóa lịch sử"
+                                        title="Clear history"
                                     >
                                         <Trash2 className="h-3 w-3" />
                                     </Button>
@@ -1009,18 +1009,18 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>
-                                            Xác nhận xóa lịch sử
+                                            Confirm Clear History
                                         </AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            Bạn có chắc chắn muốn xóa tất cả
-                                            lịch sử cảnh báo (
-                                            {alertHistory.length} mục)? Hành
-                                            động này không thể hoàn tác.
+                                            Are you sure you want to delete all
+                                            alert history (
+                                            {alertHistory.length} items)? This
+                                            action cannot be undone.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>
-                                            Hủy
+                                            Cancel
                                         </AlertDialogCancel>
                                         <AlertDialogAction
                                             onClick={() => {
@@ -1031,7 +1031,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                             }}
                                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                         >
-                                            Xóa tất cả
+                                            Clear All
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -1052,7 +1052,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                     <History className="h-5 w-5 text-muted-foreground" />
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    Chưa có lịch sử cảnh báo
+                                    No alert history yet
                                 </p>
                             </div>
                         ) : (
@@ -1070,7 +1070,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                                     {dateKey}
                                                 </span>
                                                 <span className="text-[9px] text-muted-foreground/60">
-                                                    ({alerts.length} cảnh báo)
+                                                    ({alerts.length} alerts)
                                                 </span>
                                             </div>
 
@@ -1181,7 +1181,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                                                                         )}
                                                                                         {historyAlert.threshold && (
                                                                                             <span className="text-muted-foreground">
-                                                                                                Ngưỡng:{" "}
+                                                                                                Threshold:{" "}
                                                                                                 {
                                                                                                     historyAlert.threshold
                                                                                                 }
