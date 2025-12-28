@@ -21,6 +21,7 @@ import {
     Calendar,
     ChevronDown,
     ChevronUp,
+    Settings,
 } from "lucide-react";
 import { Card, CardContent } from "./ui/card";
 import { ScrollArea } from "./ui/scroll-area";
@@ -48,6 +49,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "./ui/select";
+import { AlertThresholdsModal, loadThresholds, AlertThresholds } from "./alert-thresholds-modal";
 
 // Local storage key for alert history
 const ALERT_HISTORY_KEY = "ssh-app-alert-history";
@@ -94,25 +96,6 @@ interface HistoryAlert {
 
 // Maximum number of history entries to keep
 const MAX_HISTORY_ENTRIES = 500;
-
-// Thresholds for detecting anomalies
-const THRESHOLDS = {
-    memory: { warning: 80, critical: 95 },
-    swap: { warning: 1, critical: 20 },
-    cpu: { warning: 85, critical: 95 },
-    loadAverage: { warning: 0.8, critical: 1.5 }, // multiplier of CPU cores
-    disk: { warning: 85, critical: 95 },
-    inodes: { warning: 80, critical: 95 },
-    synRecv: { warning: 5, critical: 20 }, // SYN_RECV connections (potential SYN flood)
-    timeWait: { warning: 10000, critical: 30000 },
-    established: { warning: 2000, critical: 5000 },
-    processMemory: { warning: 40, critical: 60 }, // single process memory %
-    processCpu: { warning: 80, critical: 95 }, // single process CPU %
-    iowait: { warning: 5, critical: 15 },
-    sshFailedLogins: { window: "1m", warning: 5, critical: 20 }, // failed SSH attempts in last hour
-    zombieProcesses: { warning: 3, critical: 10 },
-    openFiles: { warning: 80, critical: 95 }, // % of max open files
-};
 
 const getCategoryIcon = (category: AlertCategory) => {
     switch (category) {
@@ -176,6 +159,10 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
         AlertCategory | "all"
     >("all");
 
+    // Thresholds state - loaded from localStorage
+    const [THRESHOLDS, setThresholds] = useState<AlertThresholds>(loadThresholds);
+    const [isThresholdsModalOpen, setIsThresholdsModalOpen] = useState(false);
+
     // History feature states
     const [alertHistory, setAlertHistory] = useState<HistoryAlert[]>([]);
     const [historyExpanded, setHistoryExpanded] = useState<
@@ -203,6 +190,11 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     const lastSavedAlertsRef = useRef<Set<string>>(new Set());
     // Track the last timestamp processed from context to avoid redundant processing
     const lastProcessedRef = useRef<number>(0);
+
+    // Handle thresholds change from modal
+    const handleThresholdsChange = useCallback((newThresholds: AlertThresholds) => {
+        setThresholds(newThresholds);
+    }, []);
 
     // Load history from localStorage on mount
     useEffect(() => {
@@ -982,6 +974,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     }
 
     return (
+        <>
         <div className="h-full flex flex-col">
             {/* Header section with padding */}
             <div className="flex-none p-2 space-y-2">
@@ -1062,6 +1055,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             <Clock className="h-2.5 w-2.5" />
                             Updated {lastUpdated.toLocaleTimeString()}
                         </div>
+                     
                         <Button
                             variant="ghost"
                             size="icon"
@@ -1076,6 +1070,15 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                     isLoading && "animate-spin"
                                 )}
                             />
+                        </Button>
+                           <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground hover:text-primary"
+                            onClick={() => setIsThresholdsModalOpen(true)}
+                            title="Configure alert thresholds"
+                        >
+                            <Settings className="h-3 w-3" />
                         </Button>
                         {alertHistory.length > 0 && (
                             <AlertDialog
@@ -1403,5 +1406,13 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                 </ScrollArea>
             </div>
         </div>
+
+            {/* Alert Thresholds Configuration Modal */}
+            <AlertThresholdsModal
+                open={isThresholdsModalOpen}
+                onOpenChange={setIsThresholdsModalOpen}
+                onThresholdsChange={handleThresholdsChange}
+            />
+        </>
     );
 }

@@ -873,7 +873,7 @@ function AppContent() {
                 canPaste={true}
             /> */}
 
-            <div className="flex-1 flex overflow-hidden border-t border-border">
+            <div className="flex-1 flex overflow-hidden border-t border-border/50">
                 <ResizablePanelGroup
                     direction="horizontal"
                     storageKey="ssh-main-layout"
@@ -1017,25 +1017,25 @@ function AppContent() {
                                     defaultValue="monitor"
                                     className="h-full flex flex-col"
                                 >
-                                    <div className="px-3 py-1.5 border-b border-border">
+                                    <div className="px-3 py-1.5 border-b ">
                                         <TabsList className="h-8 w-full justify-start bg-transparent p-0 gap-1">
                                             <TabsTrigger
                                                 value="monitor"
-                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground transition-all"
+                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border-border/50 text-muted-foreground/70 hover:text-foreground transition-all"
                                             >
                                                 Monitor
                                             </TabsTrigger>
 
                                             <TabsTrigger
                                                 value="logs"
-                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground transition-all"
+                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border-border/50 text-muted-foreground/70 hover:text-foreground transition-all"
                                             >
                                                 Logs
                                             </TabsTrigger>
 
                                             <TabsTrigger
                                                 value="alerts"
-                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground transition-all"
+                                                className="p-3.5 h-7 text-[11px] font-medium rounded-md gap-1.5 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:border-border/50 text-muted-foreground/70 hover:text-foreground transition-all"
                                             >
                                                 Alerts
                                             </TabsTrigger>

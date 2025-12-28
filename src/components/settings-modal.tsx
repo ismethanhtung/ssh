@@ -78,10 +78,10 @@ export function SettingsModal({
         enableNotifications: true,
 
         // Keyboard shortcuts
-        newSession: "Ctrl+N",
-        closeSession: "Ctrl+W",
-        nextTab: "Ctrl+Tab",
-        previousTab: "Ctrl+Shift+Tab",
+        newSession: "Cmd+N",
+        closeSession: "Cmd+W",
+        nextTab: "Cmd+Tab",
+        previousTab: "Cmd+Shift+Tab",
 
         // Advanced settings
         logLevel: "info",
@@ -180,10 +180,10 @@ export function SettingsModal({
                 showSystemMonitor: true,
                 showStatusBar: true,
                 enableNotifications: true,
-                newSession: "Ctrl+N",
-                closeSession: "Ctrl+W",
-                nextTab: "Ctrl+Tab",
-                previousTab: "Ctrl+Shift+Tab",
+                newSession: "Cmd+N",
+                closeSession: "Cmd+W",
+                nextTab: "Cmd+Tab",
+                previousTab: "Cmd+Shift+Tab",
                 logLevel: "info",
                 maxLogSize: 100,
                 checkUpdates: true,
@@ -265,7 +265,7 @@ export function SettingsModal({
                     <div className="px-4 py-3 border-b border-border/50 bg-muted/20">
                         <div>
                             <DialogTitle className="text-sm font-semibold py-1">
-                                Settings
+                                Settings - Something went wrong
                             </DialogTitle>
                         </div>
                     </div>
@@ -382,28 +382,49 @@ export function SettingsModal({
                                                                     </SelectValue>
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    <SelectItem value="Menlo, Monaco, 'Courier New', monospace" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="Menlo, Monaco, 'Courier New', monospace"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Menlo
                                                                     </SelectItem>
-                                                                    <SelectItem value="'JetBrains Mono', monospace" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="'JetBrains Mono', monospace"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         JetBrains
                                                                         Mono
                                                                     </SelectItem>
-                                                                    <SelectItem value="'Fira Code', monospace" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="'Fira Code', monospace"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Fira
                                                                         Code
                                                                     </SelectItem>
-                                                                    <SelectItem value="'Source Code Pro', monospace" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="'Source Code Pro', monospace"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Source
                                                                         Code Pro
                                                                     </SelectItem>
-                                                                    <SelectItem value="Consolas, monospace" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="Consolas, monospace"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Consolas
                                                                     </SelectItem>
-                                                                    <SelectItem value="Monaco, monospace" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="Monaco, monospace"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Monaco
                                                                     </SelectItem>
-                                                                    <SelectItem value="'Courier New', monospace" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="'Courier New', monospace"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Courier
                                                                         New
                                                                     </SelectItem>
@@ -567,39 +588,69 @@ export function SettingsModal({
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    <SelectItem value="vs-code-dark" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="vs-code-dark"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         VS Code
                                                                         Dark
                                                                     </SelectItem>
-                                                                    <SelectItem value="monokai" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="monokai"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Monokai
                                                                     </SelectItem>
-                                                                    <SelectItem value="solarized-dark" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="solarized-dark"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Solarized
                                                                         Dark
                                                                     </SelectItem>
-                                                                    <SelectItem value="solarized-light" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="solarized-light"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Solarized
                                                                         Light
                                                                     </SelectItem>
-                                                                    <SelectItem value="dracula" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="dracula"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Dracula
                                                                     </SelectItem>
-                                                                    <SelectItem value="one-dark" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="one-dark"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         One Dark
                                                                     </SelectItem>
-                                                                    <SelectItem value="nord" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="nord"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Nord
                                                                     </SelectItem>
-                                                                    <SelectItem value="gruvbox-dark" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="gruvbox-dark"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Gruvbox
                                                                         Dark
                                                                     </SelectItem>
-                                                                    <SelectItem value="tokyo-night" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="tokyo-night"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Tokyo
                                                                         Night
                                                                     </SelectItem>
-                                                                    <SelectItem value="matrix" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="matrix"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Matrix
                                                                     </SelectItem>
                                                                 </SelectContent>
@@ -638,13 +689,22 @@ export function SettingsModal({
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    <SelectItem value="block" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="block"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Block
                                                                     </SelectItem>
-                                                                    <SelectItem value="underline" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="underline"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Underline
                                                                     </SelectItem>
-                                                                    <SelectItem value="bar" className="text-[10px]">
+                                                                    <SelectItem
+                                                                        value="bar"
+                                                                        className="text-[10px]"
+                                                                    >
                                                                         Bar
                                                                     </SelectItem>
                                                                 </SelectContent>
@@ -654,10 +714,15 @@ export function SettingsModal({
                                                         <div className="flex items-center justify-between py-1">
                                                             <div className="flex-1">
                                                                 <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
-                                                                    Cursor Blinking
+                                                                    Cursor
+                                                                    Blinking
                                                                 </Label>
                                                                 <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                                                                    Enable smooth animation for the cursor
+                                                                    Enable
+                                                                    smooth
+                                                                    animation
+                                                                    for the
+                                                                    cursor
                                                                 </p>
                                                             </div>
                                                             <Switch
@@ -678,10 +743,14 @@ export function SettingsModal({
                                                         <div className="flex items-center justify-between py-1">
                                                             <div className="flex-1">
                                                                 <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
-                                                                    Background Transparency
+                                                                    Background
+                                                                    Transparency
                                                                 </Label>
                                                                 <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                                                                    Allow terminal window to be semi-transparent
+                                                                    Allow
+                                                                    terminal
+                                                                    window to be
+                                                                    semi-transparent
                                                                 </p>
                                                             </div>
                                                             <Switch
@@ -702,7 +771,11 @@ export function SettingsModal({
                                                         {terminalAppearance.allowTransparency && (
                                                             <div className="space-y-2 pl-0">
                                                                 <div className="flex items-center justify-between">
-                                                                    <Label className={labelClassName}>
+                                                                    <Label
+                                                                        className={
+                                                                            labelClassName
+                                                                        }
+                                                                    >
                                                                         Opacity
                                                                     </Label>
                                                                     <span className="text-[10px] font-mono text-muted-foreground/60">
@@ -739,10 +812,18 @@ export function SettingsModal({
                                                 {/* Terminal Preview */}
                                                 <div className="space-y-3">
                                                     <div>
-                                                        <h3 className={sectionTitleClassName}>
+                                                        <h3
+                                                            className={
+                                                                sectionTitleClassName
+                                                            }
+                                                        >
                                                             Preview
                                                         </h3>
-                                                        <p className={sectionDescClassName}>
+                                                        <p
+                                                            className={
+                                                                sectionDescClassName
+                                                            }
+                                                        >
                                                             See how your
                                                             terminal will look
                                                         </p>
@@ -910,13 +991,22 @@ export function SettingsModal({
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="SSH" className="text-[10px]">
+                                                            <SelectItem
+                                                                value="SSH"
+                                                                className="text-[10px]"
+                                                            >
                                                                 SSH
                                                             </SelectItem>
-                                                            <SelectItem value="Telnet" className="text-[10px]">
+                                                            <SelectItem
+                                                                value="Telnet"
+                                                                className="text-[10px]"
+                                                            >
                                                                 Telnet
                                                             </SelectItem>
-                                                            <SelectItem value="Raw" className="text-[10px]">
+                                                            <SelectItem
+                                                                value="Raw"
+                                                                className="text-[10px]"
+                                                            >
                                                                 Raw
                                                             </SelectItem>
                                                         </SelectContent>
@@ -1160,13 +1250,22 @@ export function SettingsModal({
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="dark" className="text-[10px]">
+                                                            <SelectItem
+                                                                value="dark"
+                                                                className="text-[10px]"
+                                                            >
                                                                 Dark (Very bad)
                                                             </SelectItem>
-                                                            <SelectItem value="light" className="text-[10px]">
+                                                            <SelectItem
+                                                                value="light"
+                                                                className="text-[10px]"
+                                                            >
                                                                 Light
                                                             </SelectItem>
-                                                            <SelectItem value="auto" className="text-[10px]">
+                                                            <SelectItem
+                                                                value="auto"
+                                                                className="text-[10px]"
+                                                            >
                                                                 Auto (System)
                                                             </SelectItem>
                                                         </SelectContent>
@@ -1215,7 +1314,8 @@ export function SettingsModal({
                                                         />
                                                     </div>
                                                     <p className="text-[9px] text-muted-foreground/50 leading-relaxed mt-0.5">
-                                                        Customize the background color for dark mode
+                                                        Customize the background
+                                                        color for dark mode
                                                     </p>
                                                 </div>
 
@@ -1246,7 +1346,7 @@ export function SettingsModal({
                                                     </div>
 
                                                     <div className="flex items-center justify-between">
-                                                        <span className="text-sm">
+                                                        <span className="text-[11px] text-foreground/80">
                                                             System Monitor
                                                         </span>
                                                         <Switch
@@ -1292,7 +1392,9 @@ export function SettingsModal({
                                                             Enable Notifications
                                                         </Label>
                                                         <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                                                            Show system notifications for important events
+                                                            Show system
+                                                            notifications for
+                                                            important events
                                                         </p>
                                                     </div>
                                                     <Switch
@@ -1322,12 +1424,18 @@ export function SettingsModal({
                                                         Keyboard Shortcuts
                                                     </h3>
                                                     <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                                                        Customize keyboard shortcuts for common actions
+                                                        Customize keyboard
+                                                        shortcuts for common
+                                                        actions
                                                     </p>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-1.5">
-                                                        <Label className={labelClassName}>
+                                                        <Label
+                                                            className={
+                                                                labelClassName
+                                                            }
+                                                        >
                                                             New Session
                                                         </Label>
                                                         <Input
@@ -1341,12 +1449,19 @@ export function SettingsModal({
                                                                         .value
                                                                 )
                                                             }
-                                                            placeholder="Ctrl+N"
-                                                            className={cn(inputClassName, "font-mono text-center")}
+                                                            placeholder="Cmd+N"
+                                                            className={cn(
+                                                                inputClassName,
+                                                                "font-mono text-center"
+                                                            )}
                                                         />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className={labelClassName}>
+                                                        <Label
+                                                            className={
+                                                                labelClassName
+                                                            }
+                                                        >
                                                             Close Session
                                                         </Label>
                                                         <Input
@@ -1360,47 +1475,64 @@ export function SettingsModal({
                                                                         .value
                                                                 )
                                                             }
-                                                            placeholder="Ctrl+W"
-                                                            className={cn(inputClassName, "font-mono text-center")}
+                                                            placeholder="Cmd+W"
+                                                            className={cn(
+                                                                inputClassName,
+                                                                "font-mono text-center"
+                                                            )}
                                                         />
                                                     </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-1.5">
-                                                        <Label className={labelClassName}>Next Tab</Label>
-                                                        <Input
-                                                            value={
-                                                                settings.nextTab
+                                                        <Label
+                                                            className={
+                                                                labelClassName
                                                             }
-                                                            onChange={(e) =>
-                                                                updateSetting(
-                                                                    "nextTab",
-                                                                    e.target
-                                                                        .value
-                                                                )
-                                                            }
-                                                            placeholder="Ctrl+Tab"
-                                                            className={cn(inputClassName, "font-mono text-center")}
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1.5">
-                                                        <Label className={labelClassName}>
-                                                            Previous Tab
+                                                        >
+                                                            Settings
                                                         </Label>
                                                         <Input
                                                             value={
-                                                                settings.previousTab
+                                                                settings.settings
                                                             }
                                                             onChange={(e) =>
                                                                 updateSetting(
-                                                                    "previousTab",
+                                                                    "settings",
                                                                     e.target
                                                                         .value
                                                                 )
                                                             }
-                                                            placeholder="Ctrl+Shift+Tab"
-                                                            className={cn(inputClassName, "font-mono text-center")}
+                                                            placeholder="Cmd+,"
+                                                            className={cn(
+                                                                inputClassName,
+                                                                "font-mono text-center"
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label
+                                                            className={
+                                                                labelClassName
+                                                            }
+                                                        >
+                                                            Tab
+                                                        </Label>
+                                                        <Input
+                                                            value={settings.tab}
+                                                            onChange={(e) =>
+                                                                updateSetting(
+                                                                    "tab",
+                                                                    e.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            placeholder="Cmd+1/2/3..."
+                                                            className={cn(
+                                                                inputClassName,
+                                                                "font-mono text-center"
+                                                            )}
                                                         />
                                                     </div>
                                                 </div>
@@ -1410,7 +1542,10 @@ export function SettingsModal({
                                                         <strong className="text-foreground/90 font-semibold">
                                                             Note:
                                                         </strong>{" "}
-                                                        Changes to keyboard shortcuts will take effect after restarting the application.
+                                                        Changes to keyboard
+                                                        shortcuts will take
+                                                        effect after restarting
+                                                        the application.
                                                     </p>
                                                 </div>
                                             </div>
@@ -1423,7 +1558,13 @@ export function SettingsModal({
                                             <div className="space-y-3">
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-1.5">
-                                                        <Label className={labelClassName}>Log Level</Label>
+                                                        <Label
+                                                            className={
+                                                                labelClassName
+                                                            }
+                                                        >
+                                                            Log Level
+                                                        </Label>
                                                         <Select
                                                             value={
                                                                 settings.logLevel
@@ -1437,20 +1578,36 @@ export function SettingsModal({
                                                                 )
                                                             }
                                                         >
-                                                            <SelectTrigger className={selectTriggerClassName}>
+                                                            <SelectTrigger
+                                                                className={
+                                                                    selectTriggerClassName
+                                                                }
+                                                            >
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="error" className="text-[10px]">
+                                                                <SelectItem
+                                                                    value="error"
+                                                                    className="text-[10px]"
+                                                                >
                                                                     Error
                                                                 </SelectItem>
-                                                                <SelectItem value="warn" className="text-[10px]">
+                                                                <SelectItem
+                                                                    value="warn"
+                                                                    className="text-[10px]"
+                                                                >
                                                                     Warning
                                                                 </SelectItem>
-                                                                <SelectItem value="info" className="text-[10px]">
+                                                                <SelectItem
+                                                                    value="info"
+                                                                    className="text-[10px]"
+                                                                >
                                                                     Info
                                                                 </SelectItem>
-                                                                <SelectItem value="debug" className="text-[10px]">
+                                                                <SelectItem
+                                                                    value="debug"
+                                                                    className="text-[10px]"
+                                                                >
                                                                     Debug
                                                                 </SelectItem>
                                                             </SelectContent>
@@ -1458,7 +1615,11 @@ export function SettingsModal({
                                                     </div>
                                                     <div className="space-y-2">
                                                         <div className="flex items-center justify-between">
-                                                            <Label className={labelClassName}>
+                                                            <Label
+                                                                className={
+                                                                    labelClassName
+                                                                }
+                                                            >
                                                                 Max Log Size
                                                             </Label>
                                                             <span className="text-[10px] font-mono text-muted-foreground/60">
@@ -1496,7 +1657,9 @@ export function SettingsModal({
                                                             Check for Updates
                                                         </Label>
                                                         <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                                                            Automatically check for application updates
+                                                            Automatically check
+                                                            for application
+                                                            updates
                                                         </p>
                                                     </div>
                                                     <Switch
@@ -1520,7 +1683,10 @@ export function SettingsModal({
                                                             Enable Telemetry
                                                         </Label>
                                                         <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
-                                                            Help improve the application by sending anonymous usage data
+                                                            Help improve the
+                                                            application by
+                                                            sending anonymous
+                                                            usage data
                                                         </p>
                                                     </div>
                                                     <Switch
@@ -1551,7 +1717,7 @@ export function SettingsModal({
                             onClick={handleReset}
                             className="text-[11px] text-muted-foreground/70 hover:text-foreground underline-offset-4 transition-colors font-medium"
                         >
-                            Reset to Defaults (U)
+                            Reset to Defaults (Upcoming)
                         </button>
                         <div className="flex gap-2">
                             <Button
