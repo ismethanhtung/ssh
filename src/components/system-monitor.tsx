@@ -1687,7 +1687,7 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                             strokeWidth={0.5}
                                             width={30}
                                         />
-                                        <Tooltip
+                                        <RechartsTooltip
                                             contentStyle={{
                                                 backgroundColor:
                                                     "hsl(var(--popover))",
@@ -1699,7 +1699,7 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                 `${value}ms`,
                                                 "Latency",
                                             ]}
-                                            labelFormatter={(label) =>
+                                            labelFormatter={(label: any) =>
                                                 `Time: ${label}`
                                             }
                                         />

@@ -39,6 +39,15 @@ import {
 } from "./ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useSessionMonitoring } from "@/lib/system-monitoring-context";
+import { Checkbox } from "./ui/checkbox";
+import { Label } from "./ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "./ui/select";
 
 // Local storage key for alert history
 const ALERT_HISTORY_KEY = "ssh-app-alert-history";
@@ -178,6 +187,17 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     const [isClearHistoryDialogOpen, setIsClearHistoryDialogOpen] =
         useState(false);
 
+    // Filter states for deletion
+    const [deleteTimeRange, setDeleteTimeRange] = useState<string>("all");
+    const [deleteSeverities, setDeleteSeverities] = useState<AlertSeverity[]>([
+        "critical",
+        "warning",
+        "info",
+    ]);
+    const [deleteCategories, setDeleteCategories] = useState<
+        (AlertCategory | "all")[]
+    >(["all"]);
+
     // Refs for tracking previous data to detect anomalies
     const alertHistoryRef = useRef<Map<string, SystemAlert>>(new Map());
     const lastSavedAlertsRef = useRef<Set<string>>(new Set());
@@ -233,15 +253,75 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
         []
     );
 
-    // Clear history
-    const clearHistory = useCallback(() => {
-        setAlertHistory([]);
-        try {
-            localStorage.removeItem(ALERT_HISTORY_KEY);
-        } catch (error) {
-            console.error("Error clearing alert history:", error);
-        }
-    }, []);
+    // Clear history with filters
+    const clearHistory = useCallback(
+        (options?: {
+            timeRange: string;
+            severities: AlertSeverity[];
+            categories: (AlertCategory | "all")[];
+        }) => {
+            if (!options) {
+                // Legacy support or fallback to clear all
+                setAlertHistory([]);
+                try {
+                    localStorage.removeItem(ALERT_HISTORY_KEY);
+                } catch (error) {
+                    console.error("Error clearing alert history:", error);
+                }
+                return;
+            }
+
+            setAlertHistory((prev) => {
+                const now = new Date();
+                const updated = prev.filter((alert) => {
+                    const alertDate = new Date(alert.timestamp);
+
+                    // Check if it matches time filter
+                    let timeMatches = true;
+                    if (options.timeRange !== "all") {
+                        const limit = new Date();
+                        if (options.timeRange === "1h")
+                            limit.setHours(now.getHours() - 1);
+                        else if (options.timeRange === "24h")
+                            limit.setDate(now.getDate() - 1);
+                        else if (options.timeRange === "7d")
+                            limit.setDate(now.getDate() - 7);
+                        else if (options.timeRange === "30d")
+                            limit.setDate(now.getDate() - 30);
+                        timeMatches = alertDate >= limit;
+                    }
+
+                    // Check if it matches severity filter
+                    const severityMatches = options.severities.includes(
+                        alert.severity
+                    );
+
+                    // Check if it matches category filter
+                    const categoryMatches =
+                        options.categories.includes("all") ||
+                        options.categories.includes(alert.category);
+
+                    // If it matches ALL criteria, we delete it (return false)
+                    if (timeMatches && severityMatches && categoryMatches) {
+                        return false;
+                    }
+                    return true;
+                });
+
+                // Save to localStorage
+                try {
+                    localStorage.setItem(
+                        ALERT_HISTORY_KEY,
+                        JSON.stringify(updated)
+                    );
+                } catch (error) {
+                    console.error("Error saving alert history:", error);
+                }
+                return updated;
+            });
+        },
+        []
+    );
 
     // Helper to process raw data into alerts
     const processMonitoringData = useCallback(
@@ -1012,32 +1092,127 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                         <Trash2 className="h-3 w-3" />
                                     </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent>
+                                <AlertDialogContent className="sm:max-w-[425px]">
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>
-                                            Confirm Clear History
+                                        <AlertDialogTitle className="flex items-center gap-2">
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                            Clear Alert History
                                         </AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            Are you sure you want to delete all
-                                            alert history ({alertHistory.length}{" "}
-                                            items)? This action cannot be
-                                            undone.
+                                            Select which alerts you want to delete
+                                            from your history.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
+
+                                    <div className="grid gap-4 py-4">
+                                        {/* Time Range */}
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                                                Time Range
+                                            </Label>
+                                            <Select
+                                                value={deleteTimeRange}
+                                                onValueChange={setDeleteTimeRange}
+                                            >
+                                                <SelectTrigger className="w-full text-xs">
+                                                    <SelectValue placeholder="Select timeframe" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="1h">Last hour</SelectItem>
+                                                    <SelectItem value="24h">Last 24 hours</SelectItem>
+                                                    <SelectItem value="7d">Last 7 days</SelectItem>
+                                                    <SelectItem value="30d">Last 30 days</SelectItem>
+                                                    <SelectItem value="all">All time</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        {/* Severity */}
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                                                Severity
+                                            </Label>
+                                            <div className="flex gap-4">
+                                                {(["critical", "warning", "info"] as AlertSeverity[]).map((sev) => (
+                                                    <div key={sev} className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id={`sev-${sev}`}
+                                                            checked={deleteSeverities.includes(sev)}
+                                                            onCheckedChange={(checked) => {
+                                                                if (checked) {
+                                                                    setDeleteSeverities([...deleteSeverities, sev]);
+                                                                } else {
+                                                                    setDeleteSeverities(deleteSeverities.filter(s => s !== sev));
+                                                                }
+                                                            }}
+                                                        />
+                                                        <Label
+                                                            htmlFor={`sev-${sev}`}
+                                                            className="text-xs capitalize cursor-pointer hover:text-primary transition-colors"
+                                                        >
+                                                            {sev}
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Categories */}
+                                        <div className="space-y-2">
+                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                                                Categories
+                                            </Label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {categories.map((cat) => (
+                                                    <div key={cat.value} className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id={`cat-${cat.value}`}
+                                                            checked={deleteCategories.includes(cat.value)}
+                                                            onCheckedChange={(checked) => {
+                                                                if (checked) {
+                                                                    if (cat.value === "all") {
+                                                                        setDeleteCategories(["all"]);
+                                                                    } else {
+                                                                        setDeleteCategories(
+                                                                            deleteCategories.filter(c => c !== "all").includes(cat.value)
+                                                                            ? deleteCategories
+                                                                            : [...deleteCategories.filter(c => c !== "all"), cat.value]
+                                                                        );
+                                                                    }
+                                                                } else {
+                                                                    setDeleteCategories(deleteCategories.filter(c => c !== cat.value));
+                                                                }
+                                                            }}
+                                                        />
+                                                        <Label
+                                                            htmlFor={`cat-${cat.value}`}
+                                                            className="text-xs cursor-pointer hover:text-primary transition-colors"
+                                                        >
+                                                            {cat.label}
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>
+                                        <AlertDialogCancel className="text-xs h-8">
                                             Cancel
                                         </AlertDialogCancel>
                                         <AlertDialogAction
                                             onClick={() => {
-                                                clearHistory();
-                                                setIsClearHistoryDialogOpen(
-                                                    false
-                                                );
+                                                clearHistory({
+                                                    timeRange: deleteTimeRange,
+                                                    severities: deleteSeverities,
+                                                    categories: deleteCategories,
+                                                });
+                                                setIsClearHistoryDialogOpen(false);
                                             }}
-                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                            disabled={deleteSeverities.length === 0 || deleteCategories.length === 0}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs h-8"
                                         >
-                                            Clear All
+                                            Clear Selected
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>

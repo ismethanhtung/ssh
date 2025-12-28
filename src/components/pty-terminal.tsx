@@ -196,7 +196,7 @@ export function PtyTerminal({
             try {
                 await checkServerReady();
                 console.log(`[PTY Terminal] [${sessionId}] WebSocket server is ready`);
-            } catch (error) {
+            } catch (error: any) {
                 console.warn(`[PTY Terminal] [${sessionId}] ${error.message}, proceeding anyway`);
                 term.write("\r\n\x1b[33m[Warning: WebSocket server may not be ready]\x1b[0m\r\n");
             }
