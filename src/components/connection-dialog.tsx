@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import {
     Dialog,
@@ -91,6 +92,7 @@ export function ConnectionDialog({
     onConnect,
     editingSession,
 }: ConnectionDialogProps) {
+    const { t } = useTranslation();
     const [config, setConfig] = useState<SessionConfig>({
         name: "",
         protocol: "SSH",
@@ -288,18 +290,16 @@ export function ConnectionDialog({
 
         // Validate authentication method specific fields
         if (config.authMethod === "password" && !config.password) {
-            toast.error("Password Required", {
-                description:
-                    "Please enter a password for password authentication.",
+            toast.error(t("connection.passwordRequired"), {
+                description: t("connection.passwordRequiredDesc"),
             });
             resetConnectionState();
             return;
         }
 
         if (config.authMethod === "publickey" && !config.privateKeyPath) {
-            toast.error("Private Key Required", {
-                description:
-                    "Please select or enter the path to your SSH private key file.",
+            toast.error(t("connection.keyRequired"), {
+                description: t("connection.keyRequiredDesc"),
             });
             resetConnectionState();
             return;
@@ -412,7 +412,7 @@ export function ConnectionDialog({
                 ) {
                     toast.info("Connection cancelled");
                 } else {
-                    toast.error("Connection Failed", {
+                    toast.error(t("connection.connectionFailed"), {
                         description:
                             result.error ||
                             "Unable to connect to the server. Please check your credentials and try again.",

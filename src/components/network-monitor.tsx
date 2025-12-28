@@ -1,3 +1,5 @@
+import React from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 // Interfaces kept for future use when re-enabling network monitoring
@@ -34,6 +36,8 @@ interface NetworkMonitorProps {
 }
 
 export function NetworkMonitor({ sessionId }: NetworkMonitorProps) {
+  const { t } = useTranslation();
+
   // Disabled for now - will be re-enabled in future updates
   // const [interfaces, setInterfaces] = useState<NetworkInterface[]>([]);
   // const [connections, setConnections] = useState<NetworkConnection[]>([]);
@@ -105,7 +109,7 @@ export function NetworkMonitor({ sessionId }: NetworkMonitorProps) {
   if (!sessionId) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>No active session. Connect to view network statistics.</p>
+        <p>{t("network.noActiveSession")}</p>
       </div>
     );
   }
@@ -114,15 +118,14 @@ export function NetworkMonitor({ sessionId }: NetworkMonitorProps) {
     <div className="flex flex-col h-full overflow-auto p-4 space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Network Statistics</CardTitle>
+          <CardTitle className="text-sm">{t("network.statistics")}</CardTitle>
           <CardDescription>
-            Advanced network monitoring features coming soon
+            {t("network.comingSoon")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Network Interfaces and Active Connections monitoring is currently disabled.
-            Check the Network Usage and Network Latency charts in the Monitor tab for current network metrics.
+            {t("network.disabledMessage")}
           </p>
         </CardContent>
       </Card>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
     ChevronRight,
     ChevronDown,
@@ -16,6 +17,7 @@ import {
     FolderEdit,
     Moon,
     Sun,
+    Settings,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -50,6 +52,7 @@ import {
 } from "./ui/context-menu";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { LanguageSwitcher } from "./language-switcher";
 
 interface SessionNode {
     id: string;
@@ -77,6 +80,7 @@ interface SessionManagerProps {
     onEditSession?: (session: SessionNode) => void; // Callback to edit session
     onDeleteSession?: (sessionId: string) => void; // Callback to delete session
     onDuplicateSession?: (session: SessionNode) => void; // Callback to duplicate session
+    onOpenSettings?: () => void; // Callback to open settings modal
 }
 
 export function SessionManager({
@@ -89,7 +93,9 @@ export function SessionManager({
     onEditSession,
     onDeleteSession,
     onDuplicateSession,
+    onOpenSettings,
 }: SessionManagerProps) {
+    const { t } = useTranslation();
     const { theme, setTheme } = useTheme();
 
     // Load sessions from storage
@@ -692,31 +698,48 @@ export function SessionManager({
                         >
                             <FolderPlus className="w-4 h-4" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                                setTheme(theme === "dark" ? "light" : "dark")
-                            }
-                            className="h-7 w-7 p-0"
-                            title={
-                                theme === "dark"
-                                    ? "Chuyển sang chế độ sáng"
-                                    : "Chuyển sang chế độ tối"
-                            }
-                        >
-                            {theme === "dark" ? (
-                                <Sun className="w-4 h-4" />
-                            ) : (
-                                <Moon className="w-4 h-4" />
+
+                        <div className="flex items-center gap-1">
+                            <LanguageSwitcher />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                    setTheme(
+                                        theme === "dark" ? "light" : "dark"
+                                    )
+                                }
+                                className="h-7 w-7 p-0"
+                                title={
+                                    theme === "dark"
+                                        ? t("theme.switchToLight")
+                                        : t("theme.switchToDark")
+                                }
+                            >
+                                {theme === "dark" ? (
+                                    <Sun className="w-4 h-4" />
+                                ) : (
+                                    <Moon className="w-4 h-4" />
+                                )}
+                            </Button>
+                            {onOpenSettings && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={onOpenSettings}
+                                    className="h-7 w-7 p-0"
+                                    title={t("common.settings")}
+                                >
+                                    <Settings className="w-4 h-4" />
+                                </Button>
                             )}
-                        </Button>
+                        </div>
                     </div>
                     <div className="flex-1 overflow-auto">
                         {sessions.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full p-4 text-center">
                                 <p className="text-sm text-muted-foreground mb-4">
-                                    No sessions yet
+                                    {t("session.noSessions")}
                                 </p>
                                 {onNewConnection && (
                                     <Button
@@ -725,7 +748,7 @@ export function SessionManager({
                                         variant="outline"
                                     >
                                         <Plus className="w-4 h-4 mr-2" />
-                                        New Connection
+                                        {t("session.newConnection")}
                                     </Button>
                                 )}
                             </div>

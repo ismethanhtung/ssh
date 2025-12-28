@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -118,6 +119,7 @@ export function IntegratedFileBrowser({
     isConnected,
     onClose,
 }: IntegratedFileBrowserProps) {
+    const { t } = useTranslation();
     const [currentPath, setCurrentPath] = useState("/home");
     const [files, setFiles] = useState<FileItem[]>([]);
     const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
@@ -1368,7 +1370,7 @@ export function IntegratedFileBrowser({
             <div className="h-full flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
                     <Folder className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Connect to SSH to browse remote files</p>
+                    <p>{t('fileBrowser.connectToSSH')}</p>
                 </div>
             </div>
         );
@@ -1430,7 +1432,7 @@ export function IntegratedFileBrowser({
 
                 <div className="flex-1 min-w-0">
                     <Input
-                        placeholder="Search..."
+                        placeholder={t('common.search')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="h-6 text-xs"
@@ -1438,12 +1440,12 @@ export function IntegratedFileBrowser({
                 </div>
 
                 <span className="text-muted-foreground whitespace-nowrap">
-                    {actualItemCount} items
+                    {actualItemCount} {t('fileBrowser.items')}
                 </span>
 
                 {selectedFiles.size > 0 && (
                     <span className="text-muted-foreground whitespace-nowrap">
-                        {selectedFiles.size} selected
+                        {selectedFiles.size} {t('fileBrowser.selected')}
                     </span>
                 )}
             </div>
@@ -1461,9 +1463,9 @@ export function IntegratedFileBrowser({
                     <div className="absolute inset-0 bg-accent/20 border-2 border-dashed border-primary z-50 flex items-center justify-center pointer-events-none">
                         <div className="bg-background/90 rounded-lg p-6 shadow-lg">
                             <Upload className="h-12 w-12 mx-auto mb-3 text-primary" />
-                            <p className="font-medium">Drop files to upload</p>
+                            <p className="font-medium">{t('fileBrowser.dropFilesToUpload')}</p>
                             <p className="text-sm text-muted-foreground mt-1">
-                                Upload to {currentPath}
+                                {t('fileBrowser.uploadTo', { path: currentPath })}
                             </p>
                         </div>
                     </div>
@@ -1481,7 +1483,7 @@ export function IntegratedFileBrowser({
                                             width: `${columnWidths.name}px`,
                                         }}
                                     >
-                                        <span>Name</span>
+                                        <span>{t('fileBrowser.name')}</span>
                                         <div
                                             className="absolute right-[-4px] top-0 bottom-0 w-2 cursor-col-resize hover:bg-accent/50 group flex items-center justify-center"
                                             onMouseDown={(e) =>
@@ -1497,7 +1499,7 @@ export function IntegratedFileBrowser({
                                             width: `${columnWidths.size}px`,
                                         }}
                                     >
-                                        <span>Size</span>
+                                        <span>{t('fileBrowser.size')}</span>
                                         <div
                                             className="absolute right-[-4px] top-0 bottom-0 w-2 cursor-col-resize hover:bg-accent/50 group flex items-center justify-center"
                                             onMouseDown={(e) =>
@@ -1513,7 +1515,7 @@ export function IntegratedFileBrowser({
                                             width: `${columnWidths.modified}px`,
                                         }}
                                     >
-                                        <span>Modified</span>
+                                        <span>{t('fileBrowser.modified')}</span>
                                         <div
                                             className="absolute right-[-4px] top-0 bottom-0 w-2 cursor-col-resize hover:bg-accent/50 group flex items-center justify-center"
                                             onMouseDown={(e) =>
@@ -1529,7 +1531,7 @@ export function IntegratedFileBrowser({
                                             width: `${columnWidths.permissions}px`,
                                         }}
                                     >
-                                        <span>Permissions</span>
+                                        <span>{t('fileBrowser.permissions')}</span>
                                         <div
                                             className="absolute right-[-4px] top-0 bottom-0 w-2 cursor-col-resize hover:bg-accent/50 group flex items-center justify-center"
                                             onMouseDown={(e) =>

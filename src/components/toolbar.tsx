@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import {
@@ -70,6 +71,8 @@ export function Toolbar({
     bottomPanelVisible,
     zenMode,
 }: ToolbarProps) {
+    const { t } = useTranslation();
+
     return (
         <TooltipProvider>
             <div className="border-b border-border bg-background px-2 py-3.5 flex items-center gap-1">

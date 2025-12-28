@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import {
     FileText,
@@ -36,6 +37,7 @@ interface LogFile {
 }
 
 export function LogViewer({ sessionId }: LogViewerProps) {
+    const { t } = useTranslation();
     const [logFiles, setLogFiles] = useState<LogFile[]>([]);
     const [selectedLogPath, setSelectedLogPath] = useState<string>("");
     const [logContent, setLogContent] = useState<string>("");
@@ -76,11 +78,8 @@ export function LogViewer({ sessionId }: LogViewerProps) {
             }
         } catch (error) {
             console.error("Failed to fetch log files:", error);
-            toast.error("Failed to Load Log Files", {
-                description:
-                    error instanceof Error
-                        ? error.message
-                        : "Unable to fetch log file list from server.",
+            toast.error(t("logs.failedToLoad"), {
+                description: t("logs.failedToLoadDesc"),
             });
         } finally {
             setIsLoadingFiles(false);

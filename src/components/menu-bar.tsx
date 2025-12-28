@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import {
     DropdownMenu,
@@ -81,6 +82,7 @@ export function MenuBar({
     hasActiveSession = false,
     canPaste = true,
 }: MenuBarProps) {
+    const { t } = useTranslation();
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
     const cmdOrCtrl = isMac ? "⌘" : "Ctrl";
 

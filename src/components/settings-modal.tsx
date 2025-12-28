@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Dialog,
     DialogContent,
@@ -27,6 +28,7 @@ import {
     Keyboard,
     Settings as SettingsIcon,
 } from "lucide-react";
+import { LanguageSwitcher } from "./language-switcher";
 import {
     TerminalAppearanceSettings,
     defaultAppearanceSettings,
@@ -47,6 +49,7 @@ export function SettingsModal({
     onOpenChange,
     onAppearanceChange,
 }: SettingsModalProps) {
+    const { t } = useTranslation();
     const [terminalAppearance, setTerminalAppearance] =
         useState<TerminalAppearanceSettings>(defaultAppearanceSettings);
 
@@ -82,6 +85,8 @@ export function SettingsModal({
         closeSession: "Cmd+W",
         nextTab: "Cmd+Tab",
         previousTab: "Cmd+Shift+Tab",
+        settings: "Cmd+,",
+        tab: "Cmd+T",
 
         // Advanced settings
         logLevel: "info",
@@ -184,6 +189,8 @@ export function SettingsModal({
                 closeSession: "Cmd+W",
                 nextTab: "Cmd+Tab",
                 previousTab: "Cmd+Shift+Tab",
+                settings: "Cmd+,",
+                tab: "Cmd+T",
                 logLevel: "info",
                 maxLogSize: 100,
                 checkUpdates: true,
@@ -215,32 +222,32 @@ export function SettingsModal({
     const categories = [
         {
             id: "terminal",
-            label: "Terminal",
+            label: t("settings.terminal"),
             icon: Terminal,
         },
         {
             id: "connection",
-            label: "Connection",
+            label: t("settings.connection"),
             icon: Globe,
         },
         {
             id: "security",
-            label: "Security",
+            label: t("settings.security"),
             icon: Shield,
         },
         {
             id: "interface",
-            label: "Interface",
+            label: t("settings.interface"),
             icon: Monitor,
         },
         {
             id: "keyboard",
-            label: "Keyboard",
+            label: t("settings.keyboard"),
             icon: Keyboard,
         },
         {
             id: "advanced",
-            label: "Advanced",
+            label: t("settings.advanced"),
             icon: SettingsIcon,
         },
     ];
@@ -1254,19 +1261,25 @@ export function SettingsModal({
                                                                 value="dark"
                                                                 className="text-[10px]"
                                                             >
-                                                                Dark (Very bad)
+                                                                {t(
+                                                                    "theme.dark"
+                                                                )}
                                                             </SelectItem>
                                                             <SelectItem
                                                                 value="light"
                                                                 className="text-[10px]"
                                                             >
-                                                                Light
+                                                                {t(
+                                                                    "theme.light"
+                                                                )}
                                                             </SelectItem>
                                                             <SelectItem
                                                                 value="auto"
                                                                 className="text-[10px]"
                                                             >
-                                                                Auto (System)
+                                                                {t(
+                                                                    "theme.system"
+                                                                )}
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
@@ -1278,7 +1291,7 @@ export function SettingsModal({
                                                             labelClassName
                                                         }
                                                     >
-                                                        Dark Background Color
+                                                        {t("settings.theme")}
                                                     </Label>
                                                     <div className="flex items-center gap-2">
                                                         <Input
@@ -1314,9 +1327,19 @@ export function SettingsModal({
                                                         />
                                                     </div>
                                                     <p className="text-[9px] text-muted-foreground/50 leading-relaxed mt-0.5">
-                                                        Customize the background
-                                                        color for dark mode
+                                                        {t("settings.theme")}
                                                     </p>
+                                                </div>
+
+                                                <div className="space-y-1.5">
+                                                    <Label
+                                                        className={
+                                                            labelClassName
+                                                        }
+                                                    >
+                                                        {t("settings.language")}
+                                                    </Label>
+                                                    <LanguageSwitcher />
                                                 </div>
 
                                                 <Separator className="my-1 bg-border/30" />

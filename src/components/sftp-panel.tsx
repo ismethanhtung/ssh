@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
 import {
@@ -72,6 +73,7 @@ export function SFTPPanel({
   sessionId,
   host,
 }: SFTPPanelProps) {
+  const { t } = useTranslation();
   const [currentPath, setCurrentPath] = useState("/home");
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -135,8 +137,8 @@ export function SFTPPanel({
       }
     } catch (error) {
       console.error('Failed to load files:', error);
-      toast.error('Failed to Load Files', {
-        description: error instanceof Error ? error.message : 'Unable to load remote directory contents.',
+      toast.error(t('sftp.failedToLoadFiles'), {
+        description: error instanceof Error ? error.message : t('sftp.unableToLoadContents'),
       });
     } finally {
       setLoading(false);
@@ -241,7 +243,7 @@ export function SFTPPanel({
               : t
           )
         );
-        toast.success(`Downloaded ${file.name} successfully`);
+        toast.success(t('sftp.downloadedSuccessfully', { fileName: file.name }));
       } else {
         setTransfers((prev) =>
           prev.map((t) =>
@@ -356,11 +358,10 @@ export function SFTPPanel({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            SFTP File Transfer - {host}
+            {t('sftp.title')} - {host}
           </DialogTitle>
           <DialogDescription>
-            Browse and transfer files between your local system
-            and the remote server.
+            {t('sftp.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -369,7 +370,7 @@ export function SFTPPanel({
           <div className="border rounded-lg">
             <div className="p-3 border-b bg-muted/50">
               <div className="flex items-center justify-between">
-                <span className="font-medium">Local Files</span>
+                <span className="font-medium">{t('sftp.localFiles')}</span>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm">
                     <Home className="h-4 w-4" />
@@ -439,7 +440,7 @@ export function SFTPPanel({
             <div className="p-3 border-b bg-muted/50">
               <div className="flex items-center justify-between">
                 <span className="font-medium">
-                  Remote Files
+                  {t('sftp.remoteFiles')}
                 </span>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm">
@@ -495,7 +496,7 @@ export function SFTPPanel({
                       <div className="text-xs text-muted-foreground">
                         {file.type === "file"
                           ? formatFileSize(file.size)
-                          : "Directory"}{" "}
+                          : t("sftp.directory")}{" "}
                         • {file.permissions}
                       </div>
                     </div>
@@ -508,11 +509,11 @@ export function SFTPPanel({
                       <DropdownMenuContent>
                         <DropdownMenuItem onClick={() => handleDownload(file)}>
                           <Download className="mr-2 h-4 w-4" />
-                          Download
+                          {t('common.download')}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {t('common.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -526,7 +527,7 @@ export function SFTPPanel({
         {/* Transfer Queue */}
         {transfers.length > 0 && (
           <div className="border-t px-6 py-4 bg-muted/30">
-            <h3 className="font-medium mb-2">Transfer Queue</h3>
+            <h3 className="font-medium mb-2">{t('sftp.transferQueue')}</h3>
             <ScrollArea className="h-32">
               {transfers.map((transfer) => (
                 <div

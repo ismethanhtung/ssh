@@ -5,6 +5,7 @@ import React, {
     useMemo,
     useCallback,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import {
     Activity,
@@ -46,8 +47,25 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "./ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "./ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "./ui/select";
+import { Label } from "./ui/label";
 import { toast } from "sonner";
 import { useMonitoring } from "@/lib/system-monitoring-context";
+import { History, Calendar } from "lucide-react";
 
 interface CpuDetails {
     total_percent: number;
@@ -116,6 +134,10 @@ interface NetworkHistoryData {
     timestamp: number;
 }
 
+// Local storage key for network history
+const NETWORK_HISTORY_KEY = "ssh-app-network-history";
+const MAX_NETWORK_HISTORY_ENTRIES = 10000; // Keep last 10k entries (~8-9 hours at 3s interval)
+
 interface NetworkSocketStats {
     total: number;
     tcp_total: number;
@@ -147,6 +169,7 @@ const getProgressColor = (usage: number): string => {
 };
 
 export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
+    const { t } = useTranslation();
     const { updateMonitoringData } = useMonitoring();
     const [stats, setStats] = useState<SystemStats>({
         cpu: 0,
@@ -537,6 +560,13 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
     const [networkHistory, setNetworkHistory] = useState<NetworkHistoryData[]>(
         []
     );
+    const [historicalNetworkData, setHistoricalNetworkData] = useState<
+        NetworkHistoryData[]
+    >([]);
+    const [historyTimeFilter, setHistoryTimeFilter] = useState<
+        "1h" | "6h" | "24h" | "all"
+    >("1h");
+    const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
     const [systemInfo, setSystemInfo] = useState<{
         os: string;
         kernel: string;
@@ -653,9 +683,33 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
 
                     setNetworkHistory((prev) => {
                         const updated = [...prev, newHistoryPoint];
-                        // Keep only last 60 data points (2 minutes) - reduced for better performance
+                        // Keep only last 60 data points (2 minutes) for real-time chart
                         return updated.slice(-60);
                     });
+
+                    // Save to localStorage for historical viewing
+                    try {
+                        const stored =
+                            localStorage.getItem(NETWORK_HISTORY_KEY);
+                        let storedHistory: NetworkHistoryData[] = stored
+                            ? JSON.parse(stored)
+                            : [];
+                        storedHistory.push(newHistoryPoint);
+                        // Keep only last MAX_NETWORK_HISTORY_ENTRIES
+                        if (
+                            storedHistory.length > MAX_NETWORK_HISTORY_ENTRIES
+                        ) {
+                            storedHistory = storedHistory.slice(
+                                -MAX_NETWORK_HISTORY_ENTRIES
+                            );
+                        }
+                        localStorage.setItem(
+                            NETWORK_HISTORY_KEY,
+                            JSON.stringify(storedHistory)
+                        );
+                    } catch (error) {
+                        console.error("Error saving network history:", error);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch network bandwidth:", error);
@@ -755,6 +809,74 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
             })),
         [networkHistory]
     );
+
+    // Load historical network data when dialog opens
+    useEffect(() => {
+        if (isHistoryDialogOpen) {
+            try {
+                const stored = localStorage.getItem(NETWORK_HISTORY_KEY);
+                if (stored) {
+                    const parsed = JSON.parse(stored) as NetworkHistoryData[];
+                    setHistoricalNetworkData(parsed);
+                } else {
+                    setHistoricalNetworkData([]);
+                }
+            } catch (error) {
+                console.error("Error loading network history:", error);
+                setHistoricalNetworkData([]);
+            }
+        }
+    }, [isHistoryDialogOpen]);
+
+    // Filter historical data by time range
+    const filteredHistoricalData = useMemo(() => {
+        if (historyTimeFilter === "all") {
+            return historicalNetworkData;
+        }
+
+        const now = Date.now();
+        let cutoffTime = now;
+
+        switch (historyTimeFilter) {
+            case "1h":
+                cutoffTime = now - 60 * 60 * 1000;
+                break;
+            case "6h":
+                cutoffTime = now - 6 * 60 * 60 * 1000;
+                break;
+            case "24h":
+                cutoffTime = now - 24 * 60 * 60 * 1000;
+                break;
+        }
+
+        return historicalNetworkData.filter(
+            (item) => item.timestamp >= cutoffTime
+        );
+    }, [historicalNetworkData, historyTimeFilter]);
+
+    // Transform historical data for chart
+    const historicalChartData = useMemo(() => {
+        // Sample data if too many points (for performance)
+        const maxPoints = 500;
+        let dataToUse = filteredHistoricalData;
+
+        if (filteredHistoricalData.length > maxPoints) {
+            const step = Math.ceil(filteredHistoricalData.length / maxPoints);
+            dataToUse = filteredHistoricalData.filter(
+                (_, index) => index % step === 0
+            );
+        }
+
+        return dataToUse.map((item) => ({
+            ...item,
+            time: new Date(item.timestamp).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+            }),
+            uploadPositive: item.upload,
+            downloadNegative: -item.download,
+        }));
+    }, [filteredHistoricalData]);
 
     return (
         <ScrollArea className="h-full">
@@ -1143,11 +1265,294 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
 
                 {/* Network Usage */}
                 <div className="space-y-1.5">
-                    <div className="flex items-center gap-1.5">
-                        <ArrowDownUp className="w-3 h-3 shrink-0" />
-                        <h3 className="text-xs font-medium truncate">
-                            Network Usage
-                        </h3>
+                    <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                            <ArrowDownUp className="w-3 h-3 shrink-0" />
+                            <h3 className="text-xs font-medium truncate">
+                                {t("network.usage")}
+                            </h3>
+                        </div>
+                        <Dialog
+                            open={isHistoryDialogOpen}
+                            onOpenChange={setIsHistoryDialogOpen}
+                        >
+                            <DialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5"
+                                    title={t("network.viewHistory")}
+                                >
+                                    <History className="h-3 w-3" />
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-9xl min-w-[850px] max-h-[90vh] p-0 gap-0 overflow-hidden border border-border/50">
+                                {/* Content */}
+                                <div className="px-4 py-4 space-y-4">
+                                    {/* Time Filter */}
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2.5">
+                                            <Label className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
+                                                {t("alerts.timeRange")}
+                                            </Label>
+                                            <Select
+                                                value={historyTimeFilter}
+                                                onValueChange={(
+                                                    value:
+                                                        | "1h"
+                                                        | "6h"
+                                                        | "24h"
+                                                        | "all"
+                                                ) =>
+                                                    setHistoryTimeFilter(value)
+                                                }
+                                            >
+                                                <SelectTrigger className="h-8 w-[160px] text-[11px] font-medium bg-background/40 border-border/40 transition-all hover:bg-background/60 shadow-none">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value="1h"
+                                                        className="text-[11px]"
+                                                    >
+                                                        {t("network.last1Hour")}
+                                                    </SelectItem>
+                                                    <SelectItem
+                                                        value="6h"
+                                                        className="text-[11px]"
+                                                    >
+                                                        {t(
+                                                            "network.last6Hours"
+                                                        )}
+                                                    </SelectItem>
+                                                    <SelectItem
+                                                        value="24h"
+                                                        className="text-[11px]"
+                                                    >
+                                                        {t(
+                                                            "network.last24Hours"
+                                                        )}
+                                                    </SelectItem>
+                                                    <SelectItem
+                                                        value="all"
+                                                        className="text-[11px]"
+                                                    >
+                                                        {t("network.allTime")}
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    {/* Historical Chart */}
+                                    <div className="h-[400px] rounded-md bg-background/20">
+                                        {historicalChartData.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center h-full text-center">
+                                                <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+                                                    <History className="h-5 w-5 text-muted-foreground/60" />
+                                                </div>
+                                                <p className="text-[11px] font-medium text-muted-foreground/70">
+                                                    No historical data available
+                                                </p>
+                                                <p className="text-[10px] text-muted-foreground/50 mt-1">
+                                                    Network usage data will
+                                                    appear here once collected
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <ResponsiveContainer
+                                                width="100%"
+                                                height="100%"
+                                            >
+                                                <AreaChart
+                                                    data={historicalChartData}
+                                                    margin={{
+                                                        top: 10,
+                                                        right: 10,
+                                                        left: 0,
+                                                        bottom: 10,
+                                                    }}
+                                                >
+                                                    <defs>
+                                                        <linearGradient
+                                                            id="uploadGradientHistory"
+                                                            x1="0"
+                                                            y1="0"
+                                                            x2="0"
+                                                            y2="1"
+                                                        >
+                                                            <stop
+                                                                offset="0%"
+                                                                stopColor="#ef4444"
+                                                                stopOpacity={
+                                                                    0.3
+                                                                }
+                                                            />
+                                                            <stop
+                                                                offset="100%"
+                                                                stopColor="#ef4444"
+                                                                stopOpacity={
+                                                                    0.05
+                                                                }
+                                                            />
+                                                        </linearGradient>
+                                                        <linearGradient
+                                                            id="downloadGradientHistory"
+                                                            x1="0"
+                                                            y1="0"
+                                                            x2="0"
+                                                            y2="1"
+                                                        >
+                                                            <stop
+                                                                offset="0%"
+                                                                stopColor="#3b82f6"
+                                                                stopOpacity={
+                                                                    0.05
+                                                                }
+                                                            />
+                                                            <stop
+                                                                offset="100%"
+                                                                stopColor="#3b82f6"
+                                                                stopOpacity={
+                                                                    0.3
+                                                                }
+                                                            />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid
+                                                        strokeDasharray="3 3"
+                                                        className="stroke-border"
+                                                        opacity={1}
+                                                    />
+                                                    <XAxis
+                                                        dataKey="time"
+                                                        axisLine={true}
+                                                        tick={{
+                                                            fontSize: 10,
+                                                            fill: "hsl(var(--muted-foreground))",
+                                                        }}
+                                                        stroke="hsl(var(--muted-foreground))"
+                                                        tickLine={false}
+                                                        interval="preserveStartEnd"
+                                                        minTickGap={50}
+                                                    />
+                                                    <YAxis
+                                                        tick={{
+                                                            fontSize: 10,
+                                                            fill: "hsl(var(--muted-foreground))",
+                                                        }}
+                                                        stroke="hsl(var(--muted-foreground))"
+                                                        domain={[
+                                                            "auto",
+                                                            "auto",
+                                                        ]}
+                                                        tickFormatter={(
+                                                            value
+                                                        ) => {
+                                                            const absValue =
+                                                                Math.abs(value);
+                                                            if (absValue === 0)
+                                                                return "0";
+                                                            if (
+                                                                absValue >= 1024
+                                                            ) {
+                                                                return `${(
+                                                                    absValue /
+                                                                    1024
+                                                                ).toFixed(
+                                                                    1
+                                                                )}MB/s`;
+                                                            }
+                                                            return `${absValue.toFixed(
+                                                                0
+                                                            )}KB/s`;
+                                                        }}
+                                                        width={60}
+                                                        tickLine={false}
+                                                    />
+                                                    <ReferenceLine
+                                                        y={0}
+                                                        stroke="hsl(var(--muted-foreground))"
+                                                        strokeWidth={1.5}
+                                                    />
+                                                    <RechartsTooltip
+                                                        contentStyle={{
+                                                            backgroundColor:
+                                                                "hsl(var(--popover))",
+                                                            border: "1px solid hsl(var(--border))",
+                                                            borderRadius: "6px",
+                                                            fontSize: "11px",
+                                                        }}
+                                                        formatter={(
+                                                            value: any,
+                                                            name: string
+                                                        ) => {
+                                                            const kbps =
+                                                                Math.abs(
+                                                                    Number(
+                                                                        value
+                                                                    )
+                                                                );
+                                                            const formatted =
+                                                                kbps >= 1024
+                                                                    ? `${(
+                                                                          kbps /
+                                                                          1024
+                                                                      ).toFixed(
+                                                                          1
+                                                                      )} MB/s`
+                                                                    : `${kbps.toFixed(
+                                                                          0
+                                                                      )} KB/s`;
+                                                            return [
+                                                                formatted,
+                                                                name ===
+                                                                "uploadPositive"
+                                                                    ? "Upload"
+                                                                    : "Download",
+                                                            ];
+                                                        }}
+                                                        labelFormatter={(
+                                                            label: any
+                                                        ) => label}
+                                                    />
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="uploadPositive"
+                                                        stroke="#ef4444"
+                                                        strokeWidth={2}
+                                                        fill="url(#uploadGradientHistory)"
+                                                        dot={false}
+                                                        activeDot={{
+                                                            r: 4,
+                                                            fill: "#ef4444",
+                                                            stroke: "#ef4444",
+                                                        }}
+                                                        isAnimationActive={true}
+                                                        animationDuration={300}
+                                                    />
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="downloadNegative"
+                                                        stroke="#3b82f6"
+                                                        strokeWidth={2}
+                                                        fill="url(#downloadGradientHistory)"
+                                                        dot={false}
+                                                        activeDot={{
+                                                            r: 4,
+                                                            fill: "#3b82f6",
+                                                            stroke: "#3b82f6",
+                                                        }}
+                                                        isAnimationActive={true}
+                                                        animationDuration={300}
+                                                    />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        )}
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                     <Card>
                         <CardContent className="p-2 space-y-2">
@@ -1157,7 +1562,7 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                     <div className="flex items-center gap-1">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#3b82f6] shrink-0" />
                                         <div className="text-[9px] text-muted-foreground">
-                                            Down
+                                            {t("network.download")}
                                         </div>
                                     </div>
                                     <div
@@ -1171,7 +1576,7 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                     <div className="flex items-center gap-1">
                                         <div className="w-1.5 h-1.5 rounded-full bg-[#ef4444] shrink-0" />
                                         <div className="text-[9px] text-muted-foreground">
-                                            Up
+                                            {t("network.upload")}
                                         </div>
                                     </div>
                                     <div
@@ -1266,12 +1671,18 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                     1228.8,
                                                 ]}
                                                 tickFormatter={(value) => {
-                                                    const absValue = Math.abs(value);
-                                                    if (absValue === 0) return "0";
+                                                    const absValue =
+                                                        Math.abs(value);
+                                                    if (absValue === 0)
+                                                        return "0";
                                                     if (absValue >= 1024) {
-                                                        return `${(absValue / 1024).toFixed(1)}MB/s`;
+                                                        return `${(
+                                                            absValue / 1024
+                                                        ).toFixed(1)}MB/s`;
                                                     }
-                                                    return `${absValue.toFixed(0)}KB/s`;
+                                                    return `${absValue.toFixed(
+                                                        0
+                                                    )}KB/s`;
                                                 }}
                                                 width={55}
                                                 tickLine={false}
@@ -1382,7 +1793,10 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                         <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p className="text-xs">Số kết nối mới mỗi giây</p>
+                                                        <p className="text-xs">
+                                                            Số kết nối mới mỗi
+                                                            giây
+                                                        </p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>
@@ -1412,7 +1826,11 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                         <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p className="text-xs">Số gói SYN mỗi giây (bắt đầu TCP handshake)</p>
+                                                        <p className="text-xs">
+                                                            Số gói SYN mỗi giây
+                                                            (bắt đầu TCP
+                                                            handshake)
+                                                        </p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>
@@ -1445,7 +1863,10 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                         <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p className="text-xs">Active TCP connections</p>
+                                                        <p className="text-xs">
+                                                            Active TCP
+                                                            connections
+                                                        </p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>
@@ -1473,7 +1894,9 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                         <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p className="text-xs">Pending handshakes</p>
+                                                        <p className="text-xs">
+                                                            Pending handshakes
+                                                        </p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>
@@ -1500,7 +1923,11 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                         <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p className="text-xs">Closed connections waiting - Normal for busy servers</p>
+                                                        <p className="text-xs">
+                                                            Closed connections
+                                                            waiting - Normal for
+                                                            busy servers
+                                                        </p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>
@@ -1528,7 +1955,10 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                         <Info className="h-2.5 w-2.5 text-muted-foreground hover:text-foreground cursor-help" />
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        <p className="text-xs">Tổng socket kernel đang quản lý</p>
+                                                        <p className="text-xs">
+                                                            Tổng socket kernel
+                                                            đang quản lý
+                                                        </p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </div>

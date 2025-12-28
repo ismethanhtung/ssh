@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import {
     AlertTriangle,
@@ -49,7 +50,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "./ui/select";
-import { AlertThresholdsModal, loadThresholds, AlertThresholds } from "./alert-thresholds-modal";
+import {
+    AlertThresholdsModal,
+    loadThresholds,
+    AlertThresholds,
+} from "./alert-thresholds-modal";
 
 // Local storage key for alert history
 const ALERT_HISTORY_KEY = "ssh-app-alert-history";
@@ -151,6 +156,7 @@ const getSeverityStyles = (severity: AlertSeverity) => {
 };
 
 export function AlertViewer({ sessionId }: AlertViewerProps) {
+    const { t } = useTranslation();
     const monitoringData = useSessionMonitoring(sessionId || "");
     const [alerts, setAlerts] = useState<SystemAlert[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -160,7 +166,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     >("all");
 
     // Thresholds state - loaded from localStorage
-    const [THRESHOLDS, setThresholds] = useState<AlertThresholds>(loadThresholds);
+    const [THRESHOLDS, setThresholds] =
+        useState<AlertThresholds>(loadThresholds);
     const [isThresholdsModalOpen, setIsThresholdsModalOpen] = useState(false);
 
     // History feature states
@@ -173,6 +180,11 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     >("all");
     const [isClearHistoryDialogOpen, setIsClearHistoryDialogOpen] =
         useState(false);
+
+    // Lazy loading states for performance optimization
+    const [visibleAlerts, setVisibleAlerts] = useState<Set<string>>(new Set());
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const alertRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
     // Filter states for deletion
     const [deleteTimeRange, setDeleteTimeRange] = useState<string>("all");
@@ -192,9 +204,12 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     const lastProcessedRef = useRef<number>(0);
 
     // Handle thresholds change from modal
-    const handleThresholdsChange = useCallback((newThresholds: AlertThresholds) => {
-        setThresholds(newThresholds);
-    }, []);
+    const handleThresholdsChange = useCallback(
+        (newThresholds: AlertThresholds) => {
+            setThresholds(newThresholds);
+        },
+        []
+    );
 
     // Load history from localStorage on mount
     useEffect(() => {
@@ -940,6 +955,63 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
         return groups;
     }, [filteredHistory]);
 
+    // Setup Intersection Observer for lazy loading alerts
+    useEffect(() => {
+        // Initialize visible alerts - show first 20 immediately
+        const initialVisible = new Set<string>();
+        let count = 0;
+        Object.values(groupedHistory).forEach((alerts) => {
+            alerts.forEach((alert) => {
+                if (count < 20) {
+                    initialVisible.add(alert.id);
+                    count++;
+                }
+            });
+        });
+        setVisibleAlerts(initialVisible);
+
+        // Setup observer for remaining alerts
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+        }
+
+        observerRef.current = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const alertId =
+                            entry.target.getAttribute("data-alert-id");
+                        if (alertId) {
+                            setVisibleAlerts((prev) =>
+                                new Set(prev).add(alertId)
+                            );
+                            // Stop observing once visible
+                            observerRef.current?.unobserve(entry.target);
+                        }
+                    }
+                });
+            },
+            {
+                rootMargin: "200px", // Start loading 200px before visible
+                threshold: 0.01,
+            }
+        );
+
+        // Observe elements after a short delay to ensure DOM is ready
+        const timeoutId = setTimeout(() => {
+            alertRefs.current.forEach((element, alertId) => {
+                if (element && !initialVisible.has(alertId)) {
+                    observerRef.current?.observe(element);
+                }
+            });
+        }, 100);
+
+        return () => {
+            clearTimeout(timeoutId);
+            observerRef.current?.disconnect();
+        };
+    }, [groupedHistory]);
+
     // Format time for display
     const formatTime = (isoString: string) => {
         const date = new Date(isoString);
@@ -975,381 +1047,629 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
 
     return (
         <>
-        <div className="h-full flex flex-col">
-            {/* Header section with padding */}
-            <div className="flex-none p-2 space-y-2">
-                {/* Category Filter */}
-                <div className="flex flex-wrap gap-1">
-                    {categories.map((cat) => {
-                        // Count for history view
-                        const count =
-                            cat.value === "all"
-                                ? filteredHistory.length
-                                : filteredHistory.filter(
-                                      (h) => h.category === cat.value
-                                  ).length;
-                        const isActive = selectedCategory === cat.value;
+            <div className="h-full flex flex-col">
+                {/* Header section with padding */}
+                <div className="flex-none p-2 space-y-2">
+                    {/* Category Filter */}
+                    <div className="flex flex-wrap gap-1">
+                        {categories.map((cat) => {
+                            // Count for history view
+                            const count =
+                                cat.value === "all"
+                                    ? filteredHistory.length
+                                    : filteredHistory.filter(
+                                          (h) => h.category === cat.value
+                                      ).length;
+                            const isActive = selectedCategory === cat.value;
 
-                        return (
-                            <button
-                                key={cat.value}
-                                onClick={() => setSelectedCategory(cat.value)}
-                                className={cn(
-                                    "px-2 py-0.5 text-[10px] rounded-sm transition-all",
-                                    isActive
-                                        ? "bg-primary text-primary-foreground"
-                                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                                )}
-                            >
-                                {cat.label}
-                                {count > 0 && (
-                                    <span className="ml-1 opacity-60">
-                                        ({count})
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* History Header */}
-                <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1">
-                        {/* Date Filter */}
-                        <button
-                            onClick={() => setHistoryDateFilter("all")}
-                            className={cn(
-                                "px-1.5 py-0.5 text-[9px] rounded transition-all",
-                                historyDateFilter === "all"
-                                    ? "bg-primary/20 text-primary"
-                                    : "text-muted-foreground hover:bg-muted"
-                            )}
-                        >
-                            All
-                        </button>
-                        <button
-                            onClick={() => setHistoryDateFilter("today")}
-                            className={cn(
-                                "px-1.5 py-0.5 text-[9px] rounded transition-all",
-                                historyDateFilter === "today"
-                                    ? "bg-primary/20 text-primary"
-                                    : "text-muted-foreground hover:bg-muted"
-                            )}
-                        >
-                            Today
-                        </button>
-                        <button
-                            onClick={() => setHistoryDateFilter("week")}
-                            className={cn(
-                                "px-1.5 py-0.5 text-[9px] rounded transition-all",
-                                historyDateFilter === "week"
-                                    ? "bg-primary/20 text-primary"
-                                    : "text-muted-foreground hover:bg-muted"
-                            )}
-                        >
-                            7 days
-                        </button>
+                            return (
+                                <button
+                                    key={cat.value}
+                                    onClick={() =>
+                                        setSelectedCategory(cat.value)
+                                    }
+                                    className={cn(
+                                        "px-2 py-0.5 text-[10px] rounded-sm transition-all",
+                                        isActive
+                                            ? "bg-primary text-primary-foreground"
+                                            : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                                    )}
+                                >
+                                    {cat.label}
+                                    {count > 0 && (
+                                        <span className="ml-1 opacity-60">
+                                            ({count})
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                            <Clock className="h-2.5 w-2.5" />
-                            Updated {lastUpdated.toLocaleTimeString()}
-                        </div>
-                     
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={fetchAnomalies}
-                            disabled={isLoading}
-                            title="Refresh data"
-                        >
-                            <RefreshCw
-                                className={cn(
-                                    "h-3 w-3",
-                                    isLoading && "animate-spin"
-                                )}
-                            />
-                        </Button>
-                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-primary"
-                            onClick={() => setIsThresholdsModalOpen(true)}
-                            title="Configure alert thresholds"
-                        >
-                            <Settings className="h-3 w-3" />
-                        </Button>
-                        {alertHistory.length > 0 && (
-                            <AlertDialog
-                                open={isClearHistoryDialogOpen}
-                                onOpenChange={setIsClearHistoryDialogOpen}
-                            >
-                                <AlertDialogTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                        title="Clear history"
-                                    >
-                                        <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="sm:max-w-[425px]">
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle className="flex items-center gap-2">
-                                            Clear Alert History
-                                        </AlertDialogTitle>
-                                    </AlertDialogHeader>
 
-                                    <div className="grid gap-4 py-4">
-                                        {/* Time Range */}
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                                                Time Range
-                                            </Label>
-                                            <Select
-                                                value={deleteTimeRange}
-                                                onValueChange={setDeleteTimeRange}
-                                            >
-                                                <SelectTrigger className="w-full text-xs">
-                                                    <SelectValue placeholder="Select timeframe" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="1h">Last hour</SelectItem>
-                                                    <SelectItem value="24h">Last 24 hours</SelectItem>
-                                                    <SelectItem value="7d">Last 7 days</SelectItem>
-                                                    <SelectItem value="30d">Last 30 days</SelectItem>
-                                                    <SelectItem value="all">All time</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                    {/* History Header */}
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1">
+                            {/* Date Filter */}
+                            <button
+                                onClick={() => setHistoryDateFilter("all")}
+                                className={cn(
+                                    "px-1.5 py-0.5 text-[9px] rounded transition-all",
+                                    historyDateFilter === "all"
+                                        ? "bg-primary/20 text-primary"
+                                        : "text-muted-foreground hover:bg-muted"
+                                )}
+                            >
+                                All
+                            </button>
+                            <button
+                                onClick={() => setHistoryDateFilter("today")}
+                                className={cn(
+                                    "px-1.5 py-0.5 text-[9px] rounded transition-all",
+                                    historyDateFilter === "today"
+                                        ? "bg-primary/20 text-primary"
+                                        : "text-muted-foreground hover:bg-muted"
+                                )}
+                            >
+                                Today
+                            </button>
+                            <button
+                                onClick={() => setHistoryDateFilter("week")}
+                                className={cn(
+                                    "px-1.5 py-0.5 text-[9px] rounded transition-all",
+                                    historyDateFilter === "week"
+                                        ? "bg-primary/20 text-primary"
+                                        : "text-muted-foreground hover:bg-muted"
+                                )}
+                            >
+                                7 days
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                                <Clock className="h-2.5 w-2.5" />
+                                {t("alerts.updated")}{" "}
+                                {lastUpdated.toLocaleTimeString()}
+                            </div>
+
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={fetchAnomalies}
+                                disabled={isLoading}
+                                title="Refresh data"
+                            >
+                                <RefreshCw
+                                    className={cn(
+                                        "h-3 w-3",
+                                        isLoading && "animate-spin"
+                                    )}
+                                />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-muted-foreground hover:text-primary"
+                                onClick={() => setIsThresholdsModalOpen(true)}
+                                title="Configure alert thresholds"
+                            >
+                                <Settings className="h-3 w-3" />
+                            </Button>
+                            {alertHistory.length > 0 && (
+                                <AlertDialog
+                                    open={isClearHistoryDialogOpen}
+                                    onOpenChange={setIsClearHistoryDialogOpen}
+                                >
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                            title="Clear history"
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden border border-border/50">
+                                        {/* Compact Header */}
+                                        <div className="px-4 py-3 border-b border-border/50 bg-muted/20">
+                                            <AlertDialogTitle className="text-sm font-semibold py-1 flex items-center gap-2">
+                                                Clear Alert History
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription className="text-[10px] text-muted-foreground/60 mt-1">
+                                                Xóa lịch sử cảnh báo theo bộ lọc
+                                                bạn chọn
+                                            </AlertDialogDescription>
                                         </div>
 
-                                        {/* Severity */}
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                                                Severity
-                                            </Label>
-                                            <div className="flex gap-4">
-                                                {(["critical", "warning", "info"] as AlertSeverity[]).map((sev) => (
-                                                    <div key={sev} className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id={`sev-${sev}`}
-                                                            checked={deleteSeverities.includes(sev)}
-                                                            onCheckedChange={(checked) => {
-                                                                if (checked) {
-                                                                    setDeleteSeverities([...deleteSeverities, sev]);
-                                                                } else {
-                                                                    setDeleteSeverities(deleteSeverities.filter(s => s !== sev));
-                                                                }
-                                                            }}
+                                        {/* Content */}
+                                        <div className="px-4 py-4 space-y-5">
+                                            {/* Time Range */}
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-1.5 block">
+                                                    {t("alerts.timeRange")}
+                                                </Label>
+                                                <Select
+                                                    value={deleteTimeRange}
+                                                    onValueChange={
+                                                        setDeleteTimeRange
+                                                    }
+                                                >
+                                                    <SelectTrigger className="h-8 text-[11px] font-medium bg-background/40 border-border/40 transition-all hover:bg-background/60 shadow-none">
+                                                        <SelectValue
+                                                            placeholder={t(
+                                                                "alerts.timeRange"
+                                                            )}
                                                         />
-                                                        <Label
-                                                            htmlFor={`sev-${sev}`}
-                                                            className="text-xs capitalize cursor-pointer hover:text-primary transition-colors"
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem
+                                                            value="1h"
+                                                            className="text-[11px]"
                                                         >
-                                                            {sev}
-                                                        </Label>
-                                                    </div>
-                                                ))}
+                                                            {t(
+                                                                "alerts.lastHour"
+                                                            )}
+                                                        </SelectItem>
+                                                        <SelectItem
+                                                            value="24h"
+                                                            className="text-[11px]"
+                                                        >
+                                                            {t(
+                                                                "alerts.last24Hours"
+                                                            )}
+                                                        </SelectItem>
+                                                        <SelectItem
+                                                            value="7d"
+                                                            className="text-[11px]"
+                                                        >
+                                                            {t(
+                                                                "alerts.last7Days"
+                                                            )}
+                                                        </SelectItem>
+                                                        <SelectItem
+                                                            value="30d"
+                                                            className="text-[11px]"
+                                                        >
+                                                            {t(
+                                                                "alerts.last30Days"
+                                                            )}
+                                                        </SelectItem>
+                                                        <SelectItem
+                                                            value="all"
+                                                            className="text-[11px]"
+                                                        >
+                                                            {t(
+                                                                "alerts.allTime"
+                                                            )}
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Severity */}
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-1.5 block">
+                                                    {t("alerts.severity")}
+                                                </Label>
+                                                <div className="flex gap-4">
+                                                    {(
+                                                        [
+                                                            "critical",
+                                                            "warning",
+                                                            "info",
+                                                        ] as AlertSeverity[]
+                                                    ).map((sev) => {
+                                                        const severityColors = {
+                                                            critical:
+                                                                "text-red-400",
+                                                            warning:
+                                                                "text-amber-400",
+                                                            info: "text-blue-400",
+                                                        };
+                                                        return (
+                                                            <div
+                                                                key={sev}
+                                                                className="flex items-center space-x-2"
+                                                            >
+                                                                <Checkbox
+                                                                    id={`sev-${sev}`}
+                                                                    checked={deleteSeverities.includes(
+                                                                        sev
+                                                                    )}
+                                                                    onCheckedChange={(
+                                                                        checked
+                                                                    ) => {
+                                                                        if (
+                                                                            checked
+                                                                        ) {
+                                                                            setDeleteSeverities(
+                                                                                [
+                                                                                    ...deleteSeverities,
+                                                                                    sev,
+                                                                                ]
+                                                                            );
+                                                                        } else {
+                                                                            setDeleteSeverities(
+                                                                                deleteSeverities.filter(
+                                                                                    (
+                                                                                        s
+                                                                                    ) =>
+                                                                                        s !==
+                                                                                        sev
+                                                                                )
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                    className="h-3.5 w-3.5"
+                                                                />
+                                                                <Label
+                                                                    htmlFor={`sev-${sev}`}
+                                                                    className={cn(
+                                                                        "text-[11px] capitalize cursor-pointer transition-colors",
+                                                                        severityColors[
+                                                                            sev
+                                                                        ],
+                                                                        deleteSeverities.includes(
+                                                                            sev
+                                                                        )
+                                                                            ? "font-semibold"
+                                                                            : "font-medium text-muted-foreground/70"
+                                                                    )}
+                                                                >
+                                                                    {t(
+                                                                        `alerts.${sev}`
+                                                                    )}
+                                                                </Label>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            {/* Categories */}
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-1.5 block">
+                                                    {t("alerts.categories")}
+                                                </Label>
+                                                <div className="grid grid-cols-2 gap-2.5">
+                                                    {categories.map((cat) => (
+                                                        <div
+                                                            key={cat.value}
+                                                            className="flex items-center space-x-2"
+                                                        >
+                                                            <Checkbox
+                                                                id={`cat-${cat.value}`}
+                                                                checked={deleteCategories.includes(
+                                                                    cat.value
+                                                                )}
+                                                                onCheckedChange={(
+                                                                    checked
+                                                                ) => {
+                                                                    if (
+                                                                        checked
+                                                                    ) {
+                                                                        if (
+                                                                            cat.value ===
+                                                                            "all"
+                                                                        ) {
+                                                                            setDeleteCategories(
+                                                                                [
+                                                                                    "all",
+                                                                                ]
+                                                                            );
+                                                                        } else {
+                                                                            setDeleteCategories(
+                                                                                deleteCategories
+                                                                                    .filter(
+                                                                                        (
+                                                                                            c
+                                                                                        ) =>
+                                                                                            c !==
+                                                                                            "all"
+                                                                                    )
+                                                                                    .includes(
+                                                                                        cat.value
+                                                                                    )
+                                                                                    ? deleteCategories
+                                                                                    : [
+                                                                                          ...deleteCategories.filter(
+                                                                                              (
+                                                                                                  c
+                                                                                              ) =>
+                                                                                                  c !==
+                                                                                                  "all"
+                                                                                          ),
+                                                                                          cat.value,
+                                                                                      ]
+                                                                            );
+                                                                        }
+                                                                    } else {
+                                                                        setDeleteCategories(
+                                                                            deleteCategories.filter(
+                                                                                (
+                                                                                    c
+                                                                                ) =>
+                                                                                    c !==
+                                                                                    cat.value
+                                                                            )
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                className="h-3.5 w-3.5"
+                                                            />
+                                                            <Label
+                                                                htmlFor={`cat-${cat.value}`}
+                                                                className={cn(
+                                                                    "text-[11px] cursor-pointer transition-colors",
+                                                                    deleteCategories.includes(
+                                                                        cat.value
+                                                                    )
+                                                                        ? "font-semibold text-foreground"
+                                                                        : "font-medium text-muted-foreground/70 hover:text-foreground"
+                                                                )}
+                                                            >
+                                                                {cat.value ===
+                                                                "all"
+                                                                    ? t(
+                                                                          "alerts.all"
+                                                                      )
+                                                                    : cat.label}
+                                                            </Label>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* Categories */}
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-                                                Categories
-                                            </Label>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {categories.map((cat) => (
-                                                    <div key={cat.value} className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id={`cat-${cat.value}`}
-                                                            checked={deleteCategories.includes(cat.value)}
-                                                            onCheckedChange={(checked) => {
-                                                                if (checked) {
-                                                                    if (cat.value === "all") {
-                                                                        setDeleteCategories(["all"]);
-                                                                    } else {
-                                                                        setDeleteCategories(
-                                                                            deleteCategories.filter(c => c !== "all").includes(cat.value)
-                                                                            ? deleteCategories
-                                                                            : [...deleteCategories.filter(c => c !== "all"), cat.value]
+                                        {/* Footer */}
+                                        <div className="px-4 py-3 border-t border-border/50 bg-muted/10 flex items-center justify-end gap-2">
+                                            <AlertDialogCancel className="text-[11px] h-8 px-3 bg-background/40 border-border/40 hover:bg-background/60">
+                                                {t("common.cancel")}
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={() => {
+                                                    clearHistory({
+                                                        timeRange:
+                                                            deleteTimeRange,
+                                                        severities:
+                                                            deleteSeverities,
+                                                        categories:
+                                                            deleteCategories,
+                                                    });
+                                                    setIsClearHistoryDialogOpen(
+                                                        false
+                                                    );
+                                                }}
+                                                disabled={
+                                                    deleteSeverities.length ===
+                                                        0 ||
+                                                    deleteCategories.length ===
+                                                        0
+                                                }
+                                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-[11px] h-8 px-3"
+                                            >
+                                                {t("alerts.clearSelected")}
+                                            </AlertDialogAction>
+                                        </div>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content area - Scrollable */}
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    {/* History Timeline */}
+                    <ScrollArea className="h-full">
+                        <div className="p-2">
+                            {filteredHistory.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-8 text-center">
+                                    <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
+                                        <History className="h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t("alerts.noHistory")}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {Object.entries(groupedHistory).map(
+                                        ([dateKey, alerts]) => (
+                                            <div
+                                                key={dateKey}
+                                                className="space-y-1"
+                                            >
+                                                {/* Date Header */}
+                                                <div className="flex items-center gap-2 px-1 py-1 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+                                                    <Calendar className="h-3 w-3 text-muted-foreground" />
+                                                    <span className="text-[10px] font-medium text-muted-foreground">
+                                                        {dateKey}
+                                                    </span>
+                                                    <span className="text-[9px] text-muted-foreground/60">
+                                                        ({alerts.length} alerts)
+                                                    </span>
+                                                </div>
+
+                                                {/* Timeline */}
+                                                <div className="relative space-y-1">
+                                                    {alerts.map(
+                                                        (historyAlert) => {
+                                                            const styles =
+                                                                getSeverityStyles(
+                                                                    historyAlert.severity
+                                                                );
+                                                            const Icon =
+                                                                getCategoryIcon(
+                                                                    historyAlert.category
+                                                                );
+                                                            const isExpanded =
+                                                                historyExpanded[
+                                                                    historyAlert
+                                                                        .id
+                                                                ] || false;
+                                                            const isVisible =
+                                                                visibleAlerts.has(
+                                                                    historyAlert.id
+                                                                );
+
+                                                            // Store ref for intersection observer
+                                                            const setRef = (
+                                                                element: HTMLDivElement | null
+                                                            ) => {
+                                                                if (element) {
+                                                                    alertRefs.current.set(
+                                                                        historyAlert.id,
+                                                                        element
+                                                                    );
+                                                                    // Observe if not already visible
+                                                                    if (
+                                                                        !isVisible &&
+                                                                        observerRef.current
+                                                                    ) {
+                                                                        // Use requestAnimationFrame to ensure DOM is ready
+                                                                        requestAnimationFrame(
+                                                                            () => {
+                                                                                if (
+                                                                                    observerRef.current &&
+                                                                                    element &&
+                                                                                    !visibleAlerts.has(
+                                                                                        historyAlert.id
+                                                                                    )
+                                                                                ) {
+                                                                                    observerRef.current.observe(
+                                                                                        element
+                                                                                    );
+                                                                                }
+                                                                            }
                                                                         );
                                                                     }
                                                                 } else {
-                                                                    setDeleteCategories(deleteCategories.filter(c => c !== cat.value));
+                                                                    alertRefs.current.delete(
+                                                                        historyAlert.id
+                                                                    );
                                                                 }
-                                                            }}
-                                                        />
-                                                        <Label
-                                                            htmlFor={`cat-${cat.value}`}
-                                                            className="text-xs cursor-pointer hover:text-primary transition-colors"
-                                                        >
-                                                            {cat.label}
-                                                        </Label>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
+                                                            };
 
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel className="text-xs h-8">
-                                            Cancel
-                                        </AlertDialogCancel>
-                                        <AlertDialogAction
-                                            onClick={() => {
-                                                clearHistory({
-                                                    timeRange: deleteTimeRange,
-                                                    severities: deleteSeverities,
-                                                    categories: deleteCategories,
-                                                });
-                                                setIsClearHistoryDialogOpen(false);
-                                            }}
-                                            disabled={deleteSeverities.length === 0 || deleteCategories.length === 0}
-                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs h-8"
-                                        >
-                                            Clear Selected
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Content area - Scrollable */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-                {/* History Timeline */}
-                <ScrollArea className="h-full">
-                    <div className="p-2">
-                        {filteredHistory.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center">
-                                <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
-                                    <History className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    No alert history yet
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {Object.entries(groupedHistory).map(
-                                    ([dateKey, alerts]) => (
-                                        <div
-                                            key={dateKey}
-                                            className="space-y-1"
-                                        >
-                                            {/* Date Header */}
-                                            <div className="flex items-center gap-2 px-1 py-1 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-                                                <Calendar className="h-3 w-3 text-muted-foreground" />
-                                                <span className="text-[10px] font-medium text-muted-foreground">
-                                                    {dateKey}
-                                                </span>
-                                                <span className="text-[9px] text-muted-foreground/60">
-                                                    ({alerts.length} alerts)
-                                                </span>
-                                            </div>
-
-                                            {/* Timeline */}
-                                            <div className="relative space-y-1">
-                                                {alerts.map((historyAlert) => {
-                                                    const styles =
-                                                        getSeverityStyles(
-                                                            historyAlert.severity
-                                                        );
-                                                    const Icon =
-                                                        getCategoryIcon(
-                                                            historyAlert.category
-                                                        );
-                                                    const isExpanded =
-                                                        historyExpanded[
-                                                            historyAlert.id
-                                                        ] || false;
-
-                                                    return (
-                                                        <div
-                                                            key={
-                                                                historyAlert.id
-                                                            }
-                                                            className="relative"
-                                                        >
-                                                            {/* Alert Card */}
-                                                            <Card
-                                                                className={cn(
-                                                                    "cursor-pointer transition-all duration-200 border rounded-md",
-                                                                    styles.bg,
-                                                                    styles.border,
-                                                                    isExpanded &&
-                                                                        styles.glow,
-                                                                    "hover:shadow-md"
-                                                                )}
-                                                                onClick={() =>
-                                                                    setHistoryExpanded(
-                                                                        (
-                                                                            prev
-                                                                        ) => ({
-                                                                            ...prev,
-                                                                            [historyAlert.id]:
-                                                                                !isExpanded,
-                                                                        })
-                                                                    )
-                                                                }
-                                                            >
-                                                                <CardContent className="p-2">
-                                                                    <div className="flex items-start gap-2">
-                                                                        <div
+                                                            return (
+                                                                <div
+                                                                    key={
+                                                                        historyAlert.id
+                                                                    }
+                                                                    ref={setRef}
+                                                                    data-alert-id={
+                                                                        historyAlert.id
+                                                                    }
+                                                                    className="relative"
+                                                                >
+                                                                    {/* Alert Card - Only render if visible */}
+                                                                    {isVisible ? (
+                                                                        <Card
                                                                             className={cn(
-                                                                                "mt-0.5 shrink-0",
-                                                                                styles.icon
+                                                                                "cursor-pointer transition-all duration-200 border rounded-md",
+                                                                                styles.bg,
+                                                                                styles.border,
+                                                                                isExpanded &&
+                                                                                    styles.glow,
+                                                                                "hover:shadow-md"
                                                                             )}
+                                                                            onClick={() =>
+                                                                                setHistoryExpanded(
+                                                                                    (
+                                                                                        prev
+                                                                                    ) => ({
+                                                                                        ...prev,
+                                                                                        [historyAlert.id]:
+                                                                                            !isExpanded,
+                                                                                    })
+                                                                                )
+                                                                            }
                                                                         >
-                                                                            <Icon className="h-3.5 w-3.5" />
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <div className="flex items-center justify-between gap-1">
-                                                                                <span
-                                                                                    className={cn(
-                                                                                        "text-[11px] font-medium truncate",
-                                                                                        styles.text
-                                                                                    )}
-                                                                                >
-                                                                                    {
-                                                                                        historyAlert.title
-                                                                                    }
-                                                                                </span>
-                                                                                <div className="flex items-center gap-1 shrink-0">
-                                                                                    <span className="text-[9px] text-muted-foreground font-mono">
-                                                                                        {formatTime(
-                                                                                            historyAlert.timestamp
-                                                                                        )}
-                                                                                    </span>
-                                                                                    <ChevronRight
+                                                                            <CardContent className="p-2">
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <div
                                                                                         className={cn(
-                                                                                            "h-3 w-3 transition-transform",
-                                                                                            styles.text,
-                                                                                            isExpanded &&
-                                                                                                "rotate-90"
+                                                                                            "mt-0.5 shrink-0",
+                                                                                            styles.icon
                                                                                         )}
-                                                                                    />
-                                                                                </div>
-                                                                            </div>
+                                                                                    >
+                                                                                        <Icon className="h-3.5 w-3.5" />
+                                                                                    </div>
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <div className="flex items-center justify-between gap-1">
+                                                                                            <span
+                                                                                                className={cn(
+                                                                                                    "text-[11px] font-medium truncate",
+                                                                                                    styles.text
+                                                                                                )}
+                                                                                            >
+                                                                                                {
+                                                                                                    historyAlert.title
+                                                                                                }
+                                                                                            </span>
+                                                                                            <div className="flex items-center gap-1 shrink-0">
+                                                                                                <span className="text-[9px] text-muted-foreground font-mono">
+                                                                                                    {formatTime(
+                                                                                                        historyAlert.timestamp
+                                                                                                    )}
+                                                                                                </span>
+                                                                                                <ChevronRight
+                                                                                                    className={cn(
+                                                                                                        "h-3 w-3 transition-transform",
+                                                                                                        styles.text,
+                                                                                                        isExpanded &&
+                                                                                                            "rotate-90"
+                                                                                                    )}
+                                                                                                />
+                                                                                            </div>
+                                                                                        </div>
 
-                                                                            {isExpanded && (
-                                                                                <div className="mt-1.5 space-y-1.5">
-                                                                                    <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                                                                        {
-                                                                                            historyAlert.description
-                                                                                        }
-                                                                                    </p>
-                                                                                    <div className="flex flex-wrap items-center gap-2 text-[9px]">
-                                                                                        {historyAlert.value && (
+                                                                                        {isExpanded && (
+                                                                                            <div className="mt-1.5 space-y-1.5">
+                                                                                                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                                                                                    {
+                                                                                                        historyAlert.description
+                                                                                                    }
+                                                                                                </p>
+                                                                                                <div className="flex flex-wrap items-center gap-2 text-[9px]">
+                                                                                                    {historyAlert.value && (
+                                                                                                        <Badge
+                                                                                                            variant="outline"
+                                                                                                            className={cn(
+                                                                                                                "text-[9px] px-1 py-0 font-mono",
+                                                                                                                styles.badge
+                                                                                                            )}
+                                                                                                        >
+                                                                                                            {
+                                                                                                                historyAlert.value
+                                                                                                            }
+                                                                                                        </Badge>
+                                                                                                    )}
+                                                                                                    {historyAlert.threshold && (
+                                                                                                        <span className="text-muted-foreground">
+                                                                                                            Threshold:{" "}
+                                                                                                            {
+                                                                                                                historyAlert.threshold
+                                                                                                            }
+                                                                                                        </span>
+                                                                                                    )}
+                                                                                                </div>
+                                                                                                <div className="flex items-center gap-1 text-[9px] text-muted-foreground/60">
+                                                                                                    <Clock className="h-2.5 w-2.5" />
+                                                                                                    {formatRelativeTime(
+                                                                                                        historyAlert.timestamp
+                                                                                                    )}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    {historyAlert.value &&
+                                                                                        !isExpanded && (
                                                                                             <Badge
                                                                                                 variant="outline"
                                                                                                 className={cn(
-                                                                                                    "text-[9px] px-1 py-0 font-mono",
+                                                                                                    "text-[9px] px-1 py-0 font-mono shrink-0",
                                                                                                     styles.badge
                                                                                                 )}
                                                                                             >
@@ -1358,54 +1678,30 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                                                                                 }
                                                                                             </Badge>
                                                                                         )}
-                                                                                        {historyAlert.threshold && (
-                                                                                            <span className="text-muted-foreground">
-                                                                                                Threshold:{" "}
-                                                                                                {
-                                                                                                    historyAlert.threshold
-                                                                                                }
-                                                                                            </span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground/60">
-                                                                                        <Clock className="h-2.5 w-2.5" />
-                                                                                        {formatRelativeTime(
-                                                                                            historyAlert.timestamp
-                                                                                        )}
-                                                                                    </div>
                                                                                 </div>
-                                                                            )}
-                                                                        </div>
-                                                                        {historyAlert.value &&
-                                                                            !isExpanded && (
-                                                                                <Badge
-                                                                                    variant="outline"
-                                                                                    className={cn(
-                                                                                        "text-[9px] px-1 py-0 font-mono shrink-0",
-                                                                                        styles.badge
-                                                                                    )}
-                                                                                >
-                                                                                    {
-                                                                                        historyAlert.value
-                                                                                    }
-                                                                                </Badge>
-                                                                            )}
-                                                                    </div>
-                                                                </CardContent>
-                                                            </Card>
-                                                        </div>
-                                                    );
-                                                })}
+                                                                            </CardContent>
+                                                                        </Card>
+                                                                    ) : (
+                                                                        // Placeholder for non-visible alerts to maintain scroll position
+                                                                        <div
+                                                                            className="h-[60px] border border-transparent"
+                                                                            aria-hidden="true"
+                                                                        />
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        }
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
+                                        )
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </ScrollArea>
+                </div>
             </div>
-        </div>
 
             {/* Alert Thresholds Configuration Modal */}
             <AlertThresholdsModal

@@ -263,7 +263,8 @@ export function AlertThresholdsModal({
     onOpenChange,
     onThresholdsChange,
 }: AlertThresholdsModalProps) {
-    const [thresholds, setThresholds] = useState<AlertThresholds>(DEFAULT_THRESHOLDS);
+    const [thresholds, setThresholds] =
+        useState<AlertThresholds>(DEFAULT_THRESHOLDS);
     const [hasChanges, setHasChanges] = useState(false);
     const [activeCategory, setActiveCategory] = useState("memory");
 
@@ -313,7 +314,9 @@ export function AlertThresholdsModal({
     const sectionDescClassName =
         "text-[10px] text-muted-foreground/60 leading-relaxed";
 
-    const activeCategoryConfig = categories.find((c) => c.id === activeCategory);
+    const activeCategoryConfig = categories.find(
+        (c) => c.id === activeCategory
+    );
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -322,13 +325,13 @@ export function AlertThresholdsModal({
                     {/* Compact Header */}
                     <div className="px-4 py-3 border-b border-border/50 bg-muted/20">
                         <div className="flex items-center gap-2">
-
                             <div>
                                 <DialogTitle className="text-sm font-semibold">
-                                    Alert Thresholds
+                                    Alert Thresholds (Upcoming)
                                 </DialogTitle>
                                 <DialogDescription className="text-[10px] text-muted-foreground/70 mt-0.5">
-                                    Configure warning and critical thresholds for system alerts
+                                    Configure warning and critical thresholds
+                                    for system alerts
                                 </DialogDescription>
                             </div>
                         </div>
@@ -345,10 +348,15 @@ export function AlertThresholdsModal({
                                         return (
                                             <button
                                                 key={category.id}
-                                                onClick={() => setActiveCategory(category.id)}
+                                                onClick={() =>
+                                                    setActiveCategory(
+                                                        category.id
+                                                    )
+                                                }
                                                 className={cn(
                                                     "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[11px] font-semibold transition-all",
-                                                    activeCategory === category.id
+                                                    activeCategory ===
+                                                        category.id
                                                         ? "bg-background text-primary border border-border/40"
                                                         : "text-muted-foreground/70 hover:bg-background/50 hover:text-foreground"
                                                 )}
@@ -371,108 +379,179 @@ export function AlertThresholdsModal({
                                             {/* Category Title */}
                                             <div className="flex items-center gap-2 pb-2 border-b border-border/30">
                                                 <div>
-                                                    <h3 className={sectionTitleClassName}>
-                                                        {activeCategoryConfig.label} Thresholds
+                                                    <h3
+                                                        className={
+                                                            sectionTitleClassName
+                                                        }
+                                                    >
+                                                        {
+                                                            activeCategoryConfig.label
+                                                        }{" "}
+                                                        Thresholds
                                                     </h3>
-                                                    <p className={sectionDescClassName}>
-                                                        Set warning and critical levels for {activeCategoryConfig.label.toLowerCase()} metrics
+                                                    <p
+                                                        className={
+                                                            sectionDescClassName
+                                                        }
+                                                    >
+                                                        Set warning and critical
+                                                        levels for{" "}
+                                                        {activeCategoryConfig.label.toLowerCase()}{" "}
+                                                        metrics
                                                     </p>
                                                 </div>
                                             </div>
 
                                             {/* Threshold Items */}
                                             <div className="space-y-4">
-                                                {activeCategoryConfig.thresholds.map((config) => {
-                                                    const threshold = thresholds[config.key];
-                                                    const warningValue = threshold.warning;
-                                                    const criticalValue = threshold.critical;
+                                                {activeCategoryConfig.thresholds.map(
+                                                    (config) => {
+                                                        const threshold =
+                                                            thresholds[
+                                                                config.key
+                                                            ];
+                                                        const warningValue =
+                                                            threshold.warning;
+                                                        const criticalValue =
+                                                            threshold.critical;
 
-                                                    return (
-                                                        <div
-                                                            key={config.key}
-                                                            className="p-3 rounded-lg border border-border/30 bg-muted/5 hover:bg-muted/10 transition-colors"
-                                                        >
-                                                            {/* Threshold Label */}
-                                                            <div className="mb-3">
-                                                                <div className="text-[12px] font-semibold text-foreground/90">
-                                                                    {config.label}
-                                                                </div>
-                                                                <div className="text-[10px] text-muted-foreground/60">
-                                                                    {config.description}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Inputs Row */}
-                                                            <div className="grid grid-cols-2 gap-4">
-                                                                {/* Warning Input */}
-                                                                <div className="space-y-1.5">
-                                                                    <Label className={cn(labelClassName, "text-amber-500/80 flex items-center gap-1.5")}>
-                                                                        <AlertTriangle className="h-2.5 w-2.5" />
-                                                                        Warning
-                                                                    </Label>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Input
-                                                                            type="number"
-                                                                            value={warningValue}
-                                                                            onChange={(e) =>
-                                                                                updateThreshold(
-                                                                                    config.key,
-                                                                                    "warning",
-                                                                                    parseFloat(e.target.value) || 0
-                                                                                )
-                                                                            }
-                                                                            min={config.min}
-                                                                            max={config.max}
-                                                                            step={config.step || 1}
-                                                                            className={cn(
-                                                                                inputClassName,
-                                                                                "border-amber-500/20 focus:border-amber-500/40"
-                                                                            )}
-                                                                        />
-                                                                        {config.unit && (
-                                                                            <span className="text-[10px] text-muted-foreground/60 min-w-[16px]">
-                                                                                {config.unit}
-                                                                            </span>
-                                                                        )}
+                                                        return (
+                                                            <div
+                                                                key={config.key}
+                                                                className="p-3 rounded-lg border border-border/30 bg-muted/5 hover:bg-muted/10 transition-colors"
+                                                            >
+                                                                {/* Threshold Label */}
+                                                                <div className="mb-3">
+                                                                    <div className="text-[12px] font-semibold text-foreground/90">
+                                                                        {
+                                                                            config.label
+                                                                        }
+                                                                    </div>
+                                                                    <div className="text-[10px] text-muted-foreground/60">
+                                                                        {
+                                                                            config.description
+                                                                        }
                                                                     </div>
                                                                 </div>
 
-                                                                {/* Critical Input */}
-                                                                <div className="space-y-1.5">
-                                                                    <Label className={cn(labelClassName, "text-red-500/80 flex items-center gap-1.5")}>
-                                                                        <AlertTriangle className="h-2.5 w-2.5" />
-                                                                        Critical
-                                                                    </Label>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Input
-                                                                            type="number"
-                                                                            value={criticalValue}
-                                                                            onChange={(e) =>
-                                                                                updateThreshold(
-                                                                                    config.key,
-                                                                                    "critical",
-                                                                                    parseFloat(e.target.value) || 0
-                                                                                )
-                                                                            }
-                                                                            min={config.min}
-                                                                            max={config.max}
-                                                                            step={config.step || 1}
+                                                                {/* Inputs Row */}
+                                                                <div className="grid grid-cols-2 gap-4">
+                                                                    {/* Warning Input */}
+                                                                    <div className="space-y-1.5">
+                                                                        <Label
                                                                             className={cn(
-                                                                                inputClassName,
-                                                                                "border-red-500/20 focus:border-red-500/40"
+                                                                                labelClassName,
+                                                                                "text-amber-500/80 flex items-center gap-1.5"
                                                                             )}
-                                                                        />
-                                                                        {config.unit && (
-                                                                            <span className="text-[10px] text-muted-foreground/60 min-w-[16px]">
-                                                                                {config.unit}
-                                                                            </span>
-                                                                        )}
+                                                                        >
+                                                                            <AlertTriangle className="h-2.5 w-2.5" />
+                                                                            Warning
+                                                                        </Label>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Input
+                                                                                type="number"
+                                                                                value={
+                                                                                    warningValue
+                                                                                }
+                                                                                onChange={(
+                                                                                    e
+                                                                                ) =>
+                                                                                    updateThreshold(
+                                                                                        config.key,
+                                                                                        "warning",
+                                                                                        parseFloat(
+                                                                                            e
+                                                                                                .target
+                                                                                                .value
+                                                                                        ) ||
+                                                                                            0
+                                                                                    )
+                                                                                }
+                                                                                min={
+                                                                                    config.min
+                                                                                }
+                                                                                max={
+                                                                                    config.max
+                                                                                }
+                                                                                step={
+                                                                                    config.step ||
+                                                                                    1
+                                                                                }
+                                                                                className={cn(
+                                                                                    inputClassName,
+                                                                                    "border-amber-500/20 focus:border-amber-500/40"
+                                                                                )}
+                                                                            />
+                                                                            {config.unit && (
+                                                                                <span className="text-[10px] text-muted-foreground/60 min-w-[16px]">
+                                                                                    {
+                                                                                        config.unit
+                                                                                    }
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Critical Input */}
+                                                                    <div className="space-y-1.5">
+                                                                        <Label
+                                                                            className={cn(
+                                                                                labelClassName,
+                                                                                "text-red-500/80 flex items-center gap-1.5"
+                                                                            )}
+                                                                        >
+                                                                            <AlertTriangle className="h-2.5 w-2.5" />
+                                                                            Critical
+                                                                        </Label>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Input
+                                                                                type="number"
+                                                                                value={
+                                                                                    criticalValue
+                                                                                }
+                                                                                onChange={(
+                                                                                    e
+                                                                                ) =>
+                                                                                    updateThreshold(
+                                                                                        config.key,
+                                                                                        "critical",
+                                                                                        parseFloat(
+                                                                                            e
+                                                                                                .target
+                                                                                                .value
+                                                                                        ) ||
+                                                                                            0
+                                                                                    )
+                                                                                }
+                                                                                min={
+                                                                                    config.min
+                                                                                }
+                                                                                max={
+                                                                                    config.max
+                                                                                }
+                                                                                step={
+                                                                                    config.step ||
+                                                                                    1
+                                                                                }
+                                                                                className={cn(
+                                                                                    inputClassName,
+                                                                                    "border-red-500/20 focus:border-red-500/40"
+                                                                                )}
+                                                                            />
+                                                                            {config.unit && (
+                                                                                <span className="text-[10px] text-muted-foreground/60 min-w-[16px]">
+                                                                                    {
+                                                                                        config.unit
+                                                                                    }
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                        );
+                                                    }
+                                                )}
                                             </div>
                                         </div>
                                     )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { MenuBar } from "./components/menu-bar";
 import { Toolbar } from "./components/toolbar";
@@ -74,6 +75,7 @@ interface SessionTab {
 }
 
 function AppContent() {
+    const { t } = useTranslation();
     const [selectedSession, setSelectedSession] = useState<SessionNode | null>(
         null
     );
@@ -772,57 +774,18 @@ function AppContent() {
         <div className="h-screen flex flex-col bg-background">
             {/* Session Restoration Loading Overlay */}
             {isRestoring && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                    <div className="mx-4 w-full max-w-sm rounded-2xl border bg-card p-8 shadow-2xl">
-                        <div className="flex items-center gap-4">
-                            <div>
-                                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                                    Workspace Restore
-                                </p>
-                                <h3 className="mt-1 text-2xl font-semibold text-foreground">
-                                    Bringing your sessions back
-                                </h3>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 space-y-5">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
+                    <div className="mx-4 w-full max-w-sm bg-card p-6 rounded-lg">
+                        <div className="text-center">
+                            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                            <h3 className="text-lg font-medium text-foreground mb-2">
+                                {t("app.restoringSessions")}
+                            </h3>
                             {currentRestoreTarget && (
-                                <div className="flex items-start gap-3 rounded-xl border bg-muted/40 p-4">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background">
-                                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">
-                                            {currentRestoreTarget.name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {currentRestoreTarget.username
-                                                ? `${currentRestoreTarget.username}@`
-                                                : ""}
-                                            {currentRestoreTarget.host ||
-                                                "unknown host"}
-                                        </p>
-                                    </div>
-                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    {currentRestoreTarget.name}
+                                </p>
                             )}
-
-                            <div className="grid grid-cols-1 gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-                                {restoreHighlights.map(
-                                    ({ icon: Icon, label }) => (
-                                        <div
-                                            key={label}
-                                            className="flex items-center gap-2 rounded-lg border border-dashed border-muted-foreground/30 p-2.5"
-                                        >
-                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-background text-primary">
-                                                <Icon className="h-4 w-4" />
-                                            </div>
-                                            <span className="text-xs leading-tight">
-                                                {label}
-                                            </span>
-                                        </div>
-                                    )
-                                )}
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -901,6 +864,7 @@ function AppContent() {
                                     }
                                     onNewConnection={handleNewTab}
                                     onEditSession={handleEditSession}
+                                    onOpenSettings={handleOpenSettings}
                                 />
                             </ResizablePanel>
 

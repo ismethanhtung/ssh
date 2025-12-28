@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
@@ -13,6 +14,17 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ activeSession }: StatusBarProps) {
+  const { t } = useTranslation();
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'connected': return t('status.connected');
+      case 'connecting': return t('status.connecting');
+      case 'disconnected': return t('status.disconnected');
+      default: return status;
+    }
+  };
+
   return (
     <div className="bg-muted border-t border-border px-4 py-1 flex items-center justify-between text-sm">
       <div className="flex items-center gap-4">
@@ -26,13 +38,13 @@ export function StatusBar({ activeSession }: StatusBarProps) {
               }`} />
               <span>{activeSession.name}</span>
             </div>
-            
+
             <Separator orientation="vertical" className="h-4" />
-            
+
             <Badge variant="outline" className="text-xs">
               {activeSession.protocol}
             </Badge>
-            
+
             {activeSession.host && (
               <>
                 <Separator orientation="vertical" className="h-4" />
@@ -42,10 +54,10 @@ export function StatusBar({ activeSession }: StatusBarProps) {
           </>
         )}
       </div>
-      
+
       <div className="flex items-center gap-4">
         <div className="text-muted-foreground">
-          Ready
+          {t("status.ready")}
         </div>
       </div>
     </div>

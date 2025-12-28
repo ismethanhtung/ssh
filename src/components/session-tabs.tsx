@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
     X,
     Plus,
@@ -44,6 +45,7 @@ export function SessionTabs({
     onCloseToRight,
     onCloseToLeft,
 }: SessionTabsProps) {
+    const { t } = useTranslation();
     return (
         <div className="bg-muted/30 p-1.5 flex items-center gap-1.5 overflow-hidden">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1">
@@ -107,14 +109,14 @@ export function SessionTabs({
                         <ContextMenuContent className="w-48">
                             <ContextMenuItem onClick={() => onTabClose(tab.id)}>
                                 <X className="mr-2 h-4 w-4" />
-                                Close Tab
+                                {t("session.closeTab")}
                             </ContextMenuItem>
                             {onCloseOthers && tabs.length > 1 && (
                                 <ContextMenuItem
                                     onClick={() => onCloseOthers(tab.id)}
                                 >
                                     <XCircle className="mr-2 h-4 w-4" />
-                                    Close Other Tabs
+                                    {t("session.closeOtherTabs")}
                                 </ContextMenuItem>
                             )}
                             <ContextMenuSeparator />
@@ -123,7 +125,7 @@ export function SessionTabs({
                                     onClick={() => onCloseToLeft(tab.id)}
                                 >
                                     <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Close Tabs to the Left
+                                    {t("session.closeTabsToLeft")}
                                 </ContextMenuItem>
                             )}
                             {onCloseToRight && index < tabs.length - 1 && (
@@ -131,7 +133,7 @@ export function SessionTabs({
                                     onClick={() => onCloseToRight(tab.id)}
                                 >
                                     <ArrowRight className="mr-2 h-4 w-4" />
-                                    Close Tabs to the Right
+                                    {t("session.closeTabsToRight")}
                                 </ContextMenuItem>
                             )}
                             {onCloseAll && tabs.length > 0 && (
@@ -139,7 +141,7 @@ export function SessionTabs({
                                     <ContextMenuSeparator />
                                     <ContextMenuItem onClick={onCloseAll}>
                                         <XCircle className="mr-2 h-4 w-4" />
-                                        Close All Tabs
+                                        {t("session.closeAllTabs")}
                                     </ContextMenuItem>
                                 </>
                             )}
@@ -153,7 +155,7 @@ export function SessionTabs({
                 size="icon"
                 className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/80 shrink-0"
                 onClick={onNewTab}
-                title="New Tab"
+                title={t("session.newTab")}
             >
                 <Plus className="w-4 h-4" />
             </Button>

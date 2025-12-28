@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import {
     Terminal,
@@ -21,27 +22,29 @@ export function WelcomeScreen({
     onNewSession,
     onOpenSettings,
 }: WelcomeScreenProps) {
+    const { t } = useTranslation();
+
     const quickActions = [
         {
             icon: Plus,
-            title: "New Session",
-            description: "Connect to a remote server",
+            title: t("welcome.newSession"),
+            description: t("welcome.connectDescription"),
             action: onNewSession,
             variant: "default" as const,
             shortcut: "Ctrl+N",
         },
         {
             icon: FolderTree,
-            title: "Session Manager",
-            description: "Organize your connections",
+            title: t("welcome.sessionManager"),
+            description: t("welcome.organizeDescription"),
             action: () => {},
             variant: "outline" as const,
-            highlight: "Use the left sidebar →",
+            highlight: t("welcome.sidebarHint"),
         },
         {
             icon: Settings,
-            title: "Settings",
-            description: "Configure your preferences",
+            title: t("welcome.settings"),
+            description: t("welcome.configureDescription"),
             action: onOpenSettings,
             variant: "outline" as const,
             shortcut: "Ctrl+,",
@@ -78,7 +81,7 @@ export function WelcomeScreen({
                         </div>
                         <div>
                             <h1 className="text-2xl font-semibold">
-                                Welcome to SSH Client
+                                {t("app.welcome")}
                             </h1>
                         </div>
                     </div>
@@ -86,7 +89,7 @@ export function WelcomeScreen({
                     {/* Supported Protocols */}
                     <div className="flex items-center justify-center gap-2 flex-wrap">
                         <span className="text-xs text-muted-foreground">
-                            Supports:
+                            {t("welcome.supports")}:
                         </span>
                         {protocols.map((protocol) => (
                             <span
