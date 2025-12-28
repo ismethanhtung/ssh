@@ -32,6 +32,7 @@ import {
 } from "./lib/keyboard-shortcuts";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
+import { ThemeProvider } from "next-themes";
 
 import {
     ResizableHandle,
@@ -871,22 +872,8 @@ function AppContent() {
                 hasActiveSession={!!activeTab}
                 canPaste={true}
             /> */}
-            <Toolbar
-                onNewSession={handleNewTab}
-                onOpenSFTP={handleOpenSFTP}
-                onOpenSettings={handleOpenSettings}
-                onToggleLeftSidebar={toggleLeftSidebar}
-                onToggleRightSidebar={toggleRightSidebar}
-                onToggleBottomPanel={toggleBottomPanel}
-                onToggleZenMode={toggleZenMode}
-                onApplyPreset={applyPreset}
-                leftSidebarVisible={layout.leftSidebarVisible}
-                rightSidebarVisible={layout.rightSidebarVisible}
-                bottomPanelVisible={layout.bottomPanelVisible}
-                zenMode={layout.zenMode}
-            />
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden border-t border-border">
                 <ResizablePanelGroup
                     direction="horizontal"
                     storageKey="ssh-main-layout"
@@ -896,8 +883,8 @@ function AppContent() {
                         <>
                             <ResizablePanel
                                 defaultSize={layout.leftSidebarSize}
-                                minSize={12}
-                                maxSize={30}
+                                minSize={14}
+                                maxSize={22}
                                 onResize={(size) => setLeftSidebarSize(size)}
                             >
                                 <SessionManager
@@ -1022,8 +1009,8 @@ function AppContent() {
                             {/* Right Sidebar - Tabs for Monitor/Logs */}
                             <ResizablePanel
                                 defaultSize={layout.rightSidebarSize}
-                                minSize={15}
-                                maxSize={200}
+                                minSize={24}
+                                maxSize={36}
                                 onResize={(size) => setRightSidebarSize(size)}
                             >
                                 <Tabs
@@ -1193,10 +1180,12 @@ function AppContent() {
 }
 export default function App() {
     return (
-        <LayoutProvider>
-            <MonitoringProvider>
-                <AppContent />
-            </MonitoringProvider>
-        </LayoutProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <LayoutProvider>
+                <MonitoringProvider>
+                    <AppContent />
+                </MonitoringProvider>
+            </LayoutProvider>
+        </ThemeProvider>
     );
 }

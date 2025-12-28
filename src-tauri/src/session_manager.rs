@@ -7,7 +7,7 @@ use tokio_util::sync::CancellationToken;
 
 pub struct SessionManager {
     sessions: Arc<RwLock<HashMap<String, Arc<RwLock<SshClient>>>>>,
-    pty_sessions: Arc<RwLock<HashMap<String, Arc<PtySession>>>>,
+    pub pty_sessions: Arc<RwLock<HashMap<String, Arc<PtySession>>>>,
     pending_connections: Arc<RwLock<HashMap<String, CancellationToken>>>,
 }
 
@@ -119,72 +119,63 @@ impl SessionManager {
     }
     
     /// Send data to PTY (user input)
-    /// Uses try_send for better performance (non-blocking)
+    /// Uses enhanced PTY session's safe write method with timeout and validation
     pub async fn write_to_pty(
         &self,
         session_id: &str,
         data: Vec<u8>,
     ) -> Result<()> {
+        // First check if SSH session exists (PTY requires SSH session)
+        let sessions = self.sessions.read().await;
+        if !sessions.contains_key(session_id) {
+            return Err(anyhow::anyhow!("SSH session not found: {}", session_id));
+        }
+        drop(sessions); // Release lock before acquiring pty_sessions lock
+        
         let pty_sessions = self.pty_sessions.read().await;
         let pty = pty_sessions
             .get(session_id)
-            .ok_or_else(|| anyhow::anyhow!("PTY session not found"))?;
+            .ok_or_else(|| anyhow::anyhow!("PTY session not found: {}", session_id))?;
         
-        // Use try_send for better performance (like ttyd's immediate send)
-        match pty.input_tx.try_send(data) {
-            Ok(_) => Ok(()),
-            Err(tokio::sync::mpsc::error::TrySendError::Full(data)) => {
-                // If channel is full, fall back to async send in background
-                let tx = pty.input_tx.clone();
-                tokio::spawn(async move {
-                    let _ = tx.send(data).await;
-                });
-                Ok(())
-            }
-            Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
-                Err(anyhow::anyhow!("PTY channel closed"))
-            }
-        }
+        // Use the enhanced PTY session's safe write method
+        // This includes timeout, size validation, and proper error handling
+        pty.write(data).await
     }
     
     /// Read data from PTY (output for display)
-    /// OPTIMIZED: Use try_recv first for immediate data, then short timeout
+    /// Uses enhanced PTY session's safe read method with timeout
     pub async fn read_from_pty(
         &self,
         session_id: &str,
     ) -> Result<Vec<u8>> {
+        // First check if SSH session exists (PTY requires SSH session)
+        let sessions = self.sessions.read().await;
+        if !sessions.contains_key(session_id) {
+            return Err(anyhow::anyhow!("SSH session not found: {}", session_id));
+        }
+        drop(sessions); // Release lock before acquiring pty_sessions lock
+        
         let pty_sessions = self.pty_sessions.read().await;
         let pty = pty_sessions
             .get(session_id)
-            .ok_or_else(|| anyhow::anyhow!("PTY session not found"))?;
+            .ok_or_else(|| anyhow::anyhow!("PTY session not found: {}", session_id))?;
         
-        let mut rx = pty.output_rx.lock().await;
-        
-        // Try immediate read first (non-blocking)
-        match rx.try_recv() {
-            Ok(data) => return Ok(data),
-            Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {
-                // No immediate data, use short timeout
-            }
-            Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
-                return Err(anyhow::anyhow!("PTY session closed"));
-            }
-        }
-        
-        // Fall back to short timeout wait (1ms for ultra-low latency)
-        match tokio::time::timeout(
-            tokio::time::Duration::from_millis(1),
-            rx.recv()
-        ).await {
-            Ok(Some(data)) => Ok(data),
-            Ok(None) => Err(anyhow::anyhow!("PTY session closed")),
-            Err(_) => Ok(Vec::new()), // Timeout - no data available
-        }
+        // Use the enhanced PTY session's safe read method
+        // 1ms timeout for ultra-low latency
+        pty.read(1).await
     }
     
-    /// Close PTY session
+    /// Close PTY session with proper cleanup
     pub async fn close_pty_session(&self, session_id: &str) -> Result<()> {
         let mut pty_sessions = self.pty_sessions.write().await;
+        
+        // Get the PTY session and close it gracefully
+        if let Some(pty) = pty_sessions.get(session_id) {
+            tracing::info!("Closing PTY session: {}", session_id);
+            pty.close().await;
+        }
+        
+        // Remove from map
         pty_sessions.remove(session_id);
         Ok(())
     }

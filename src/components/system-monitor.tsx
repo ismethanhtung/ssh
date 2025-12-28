@@ -945,11 +945,11 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                 <table className="w-full caption-bottom text-sm">
                                     <thead className="[&_tr]:border-b">
                                         <tr className="border-b transition-colors">
-                                            <th className="sticky top-0 z-10 bg-background text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs">
+                                            <th className="sticky top-0 z-10 bg-muted text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs">
                                                 PID
                                             </th>
                                             <th
-                                                className="sticky top-0 z-10 bg-background text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs cursor-pointer hover:bg-muted/50 select-none"
+                                                className="sticky top-0 z-10 bg-muted text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs cursor-pointer hover:bg-muted/80 select-none"
                                                 onClick={() =>
                                                     setProcessSortBy("cpu")
                                                 }
@@ -963,7 +963,7 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                 </div>
                                             </th>
                                             <th
-                                                className="sticky top-0 z-10 bg-background text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs cursor-pointer hover:bg-muted/50 select-none"
+                                                className="sticky top-0 z-10 bg-muted text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs cursor-pointer hover:bg-muted/80 select-none"
                                                 onClick={() =>
                                                     setProcessSortBy("mem")
                                                 }
@@ -976,10 +976,10 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                     )}
                                                 </div>
                                             </th>
-                                            <th className="sticky top-0 z-10 bg-background text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs">
+                                            <th className="sticky top-0 z-10 bg-muted text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs">
                                                 Command
                                             </th>
-                                            <th className="sticky top-0  bg-background text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs w-8"></th>
+                                            <th className="sticky top-0  bg-muted text-foreground h-8 px-1 text-left align-middle font-medium whitespace-nowrap text-xs w-8"></th>
                                         </tr>
                                     </thead>
                                     <tbody className="[&_tr:last-child]:border-0">
@@ -1058,19 +1058,19 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                     <table className="w-full caption-bottom text-sm">
                                         <thead className="[&_tr]:border-b">
                                             <tr className="border-b transition-colors">
-                                                <th className="sticky top-0 z-10 bg-background text-foreground h-7 px-1 text-left align-middle font-medium text-xs">
+                                                <th className="sticky top-0 z-10 bg-muted text-foreground h-7 px-1 text-left align-middle font-medium text-xs">
                                                     Filesystem
                                                 </th>
-                                                <th className="sticky top-0 z-10 bg-background text-foreground h-7 px-1 text-left align-middle font-medium text-xs">
+                                                <th className="sticky top-0 z-10 bg-muted text-foreground h-7 px-1 text-left align-middle font-medium text-xs">
                                                     Mounted on
                                                 </th>
-                                                <th className="sticky top-0 z-10 bg-background text-foreground h-7 px-1 text-right align-middle font-medium text-xs">
+                                                <th className="sticky top-0 z-10 bg-muted text-foreground h-7 px-1 text-right align-middle font-medium text-xs">
                                                     Size
                                                 </th>
-                                                <th className="sticky top-0 z-10 bg-background text-foreground h-7 px-1 text-right align-middle font-medium text-xs">
+                                                <th className="sticky top-0 z-10 bg-muted text-foreground h-7 px-1 text-right align-middle font-medium text-xs">
                                                     Inodes
                                                 </th>
-                                                <th className="sticky top-0  bg-background text-foreground h-7 px-1 text-right align-middle font-medium text-xs">
+                                                <th className="sticky top-0  bg-muted text-foreground h-7 px-1 text-right align-middle font-medium text-xs">
                                                     Usage
                                                 </th>
                                             </tr>
@@ -1185,9 +1185,6 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
 
                             {/* Usage History Chart */}
                             <div>
-                                <div className="text-[9px] text-muted-foreground mb-1">
-                                    History
-                                </div>
                                 <div className="h-24">
                                     <ResponsiveContainer
                                         width="100%"
@@ -1243,7 +1240,7 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                             <CartesianGrid
                                                 strokeDasharray="3 3"
                                                 className="stroke-border"
-                                                opacity={0.2}
+                                                opacity={1}
                                             />
                                             <XAxis
                                                 dataKey="time"
@@ -1269,20 +1266,14 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                                     1228.8,
                                                 ]}
                                                 tickFormatter={(value) => {
-                                                    const absValue =
-                                                        Math.abs(value);
-                                                    if (absValue === 0)
-                                                        return "0";
+                                                    const absValue = Math.abs(value);
+                                                    if (absValue === 0) return "0";
                                                     if (absValue >= 1024) {
-                                                        return `${(
-                                                            absValue / 1024
-                                                        ).toFixed(1)} MB/s`;
+                                                        return `${(absValue / 1024).toFixed(1)}MB/s`;
                                                     }
-                                                    return `${absValue.toFixed(
-                                                        0
-                                                    )} KB/s`;
+                                                    return `${absValue.toFixed(0)}KB/s`;
                                                 }}
-                                                width={50}
+                                                width={55}
                                                 tickLine={false}
                                             />
                                             <ReferenceLine
@@ -1647,7 +1638,7 @@ export function SystemMonitor({ sessionId, onPathClick }: SystemMonitorProps) {
                                         <CartesianGrid
                                             strokeDasharray="3 3"
                                             className="stroke-border"
-                                            opacity={0.2}
+                                            opacity={1}
                                         />
                                         <defs>
                                             <linearGradient

@@ -1095,13 +1095,8 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                 <AlertDialogContent className="sm:max-w-[425px]">
                                     <AlertDialogHeader>
                                         <AlertDialogTitle className="flex items-center gap-2">
-                                            <Trash2 className="h-4 w-4 text-destructive" />
                                             Clear Alert History
                                         </AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Select which alerts you want to delete
-                                            from your history.
-                                        </AlertDialogDescription>
                                     </AlertDialogHeader>
 
                                     <div className="grid gap-4 py-4">
@@ -1340,7 +1335,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                                                             </div>
 
                                                                             {isExpanded && (
-                                                                                <div className="mt-1.5 space-y-1.5 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                                                                                <div className="mt-1.5 space-y-1.5">
                                                                                     <p className="text-[10px] text-muted-foreground leading-relaxed">
                                                                                         {
                                                                                             historyAlert.description

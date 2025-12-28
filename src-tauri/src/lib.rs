@@ -6,6 +6,7 @@ mod websocket_server;
 use session_manager::SessionManager;
 use websocket_server::WebSocketServer;
 use std::sync::Arc;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,7 +20,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .setup({
             let session_manager_clone = session_manager.clone();
-            move |_app| {
+            move |app| {
+                // Set window theme to light mode for white title bar on macOS
+                #[cfg(target_os = "macos")]
+                {
+                    if let Some(window) = app.get_webview_window("main") {
+                        if let Err(e) = window.set_theme(Some(tauri::Theme::Light)) {
+                            tracing::warn!("Failed to set window theme to light: {}", e);
+                        }
+                    }
+                }
+
                 // Start WebSocket server for terminal I/O on port 9001
                 // This runs after Tauri's async runtime is initialized
                 let ws_server = Arc::new(WebSocketServer::new(session_manager_clone, 9001));

@@ -124,7 +124,13 @@ impl WebSocketServer {
                                 .write_to_pty(&session_id, input_data)
                                 .await
                             {
-                                tracing::error!("Failed to write to PTY: {}", e);
+                                // Don't log error if PTY session is not found (normal during cleanup)
+                                let error_msg = e.to_string();
+                                if error_msg.contains("PTY session not found") {
+                                    tracing::debug!("PTY session {} not found (may be closing)", session_id);
+                                } else {
+                                    tracing::error!("Failed to write to PTY: {}", e);
+                                }
                             }
                         }
                         _ => {
@@ -282,7 +288,16 @@ impl WebSocketServer {
             }
             WsMessage::Input { session_id, data } => {
                 tracing::debug!("Received input for session {}: {} bytes", session_id, data.len());
-                self.session_manager.write_to_pty(&session_id, data).await?;
+                if let Err(e) = self.session_manager.write_to_pty(&session_id, data).await {
+                    let error_msg = e.to_string();
+                    // Don't return error if PTY session is not found (normal during cleanup)
+                    if error_msg.contains("PTY session not found") {
+                        tracing::debug!("PTY session {} not found (may be closing), ignoring input", session_id);
+                        // Silently ignore - don't send error to client
+                    } else {
+                        return Err(e);
+                    }
+                }
             }
             WsMessage::Resize {
                 session_id,
@@ -290,11 +305,29 @@ impl WebSocketServer {
                 rows,
             } => {
                 tracing::info!("Resizing terminal {}: {}x{}", session_id, cols, rows);
-                // TODO: Implement resize_pty in SessionManager
-                let response = WsMessage::Success {
-                    message: format!("Terminal resized: {}x{}", cols, rows),
-                };
-                tx.send(serde_json::to_string(&response)?)?;
+                
+                // Get the PTY session and update its size
+                let pty_sessions = self.session_manager.pty_sessions.read().await;
+                if let Some(pty) = pty_sessions.get(&session_id) {
+                    match pty.update_size(cols, rows).await {
+                        Ok(_) => {
+                            let response = WsMessage::Success {
+                                message: format!("Terminal resized: {}x{}", cols, rows),
+                            };
+                            tx.send(serde_json::to_string(&response)?)?;
+                        }
+                        Err(e) => {
+                            let error = WsMessage::Error {
+                                message: format!("Failed to resize terminal: {}", e),
+                            };
+                            tx.send(serde_json::to_string(&error)?)?;
+                        }
+                    }
+                } else {
+                    // PTY session not found - this is normal during cleanup, just log debug
+                    tracing::debug!("PTY session {} not found for resize (may be closing)", session_id);
+                    // Don't send error to client - this is expected during cleanup
+                }
             }
             WsMessage::Pause { session_id } => {
                 tracing::debug!("Pausing output for session: {}", session_id);

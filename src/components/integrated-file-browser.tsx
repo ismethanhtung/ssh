@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { ScrollArea } from "./ui/scroll-area";
+import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
 import {
@@ -1450,7 +1450,7 @@ export function IntegratedFileBrowser({
 
             {/* File List */}
             <div
-                className="flex-1 overflow-hidden relative"
+                className="flex-1 overflow-hidden relative "
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -1476,7 +1476,7 @@ export function IntegratedFileBrowser({
                                 {/* Column Headers */}
                                 <div className="flex gap-2 px-2 py-1 text-xs font-medium text-muted-foreground border-b bg-muted sticky top-0">
                                     <div
-                                        className="flex items-center relative"
+                                        className="flex items-center relative flex-1 min-w-[50px]"
                                         style={{
                                             width: `${columnWidths.name}px`,
                                         }}
@@ -1492,7 +1492,7 @@ export function IntegratedFileBrowser({
                                         </div>
                                     </div>
                                     <div
-                                        className="flex items-center relative"
+                                        className="flex items-center relative flex-shrink-0"
                                         style={{
                                             width: `${columnWidths.size}px`,
                                         }}
@@ -1508,7 +1508,7 @@ export function IntegratedFileBrowser({
                                         </div>
                                     </div>
                                     <div
-                                        className="flex items-center relative"
+                                        className="flex items-center relative flex-shrink-0"
                                         style={{
                                             width: `${columnWidths.modified}px`,
                                         }}
@@ -1524,7 +1524,7 @@ export function IntegratedFileBrowser({
                                         </div>
                                     </div>
                                     <div
-                                        className="flex items-center relative"
+                                        className="flex items-center relative flex-shrink-0"
                                         style={{
                                             width: `${columnWidths.permissions}px`,
                                         }}
@@ -1543,6 +1543,7 @@ export function IntegratedFileBrowser({
                                         </div>
                                     </div>
                                     <div
+                                        className="flex-shrink-0"
                                         style={{
                                             width: `${columnWidths.owner}px`,
                                         }}
@@ -1581,7 +1582,7 @@ export function IntegratedFileBrowser({
                                                 }}
                                             >
                                                 <div
-                                                    className="flex items-center gap-2 min-w-0"
+                                                    className="flex items-center gap-2 flex-1 min-w-[150px]"
                                                     style={{
                                                         width: `${columnWidths.name}px`,
                                                     }}
@@ -1622,7 +1623,7 @@ export function IntegratedFileBrowser({
                                                     )}
                                                 </div>
                                                 <div
-                                                    className="text-sm text-muted-foreground truncate"
+                                                    className="text-sm text-muted-foreground truncate flex-shrink-0"
                                                     style={{
                                                         width: `${columnWidths.size}px`,
                                                     }}
@@ -1634,7 +1635,7 @@ export function IntegratedFileBrowser({
                                                         : "-"}
                                                 </div>
                                                 <div
-                                                    className="text-sm text-muted-foreground truncate"
+                                                    className="text-sm text-muted-foreground truncate flex-shrink-0"
                                                     style={{
                                                         width: `${columnWidths.modified}px`,
                                                     }}
@@ -1646,7 +1647,7 @@ export function IntegratedFileBrowser({
                                                         : "-"}
                                                 </div>
                                                 <div
-                                                    className="text-sm font-mono text-muted-foreground truncate"
+                                                    className="text-sm font-mono text-muted-foreground truncate flex-shrink-0"
                                                     style={{
                                                         width: `${columnWidths.permissions}px`,
                                                     }}
@@ -1654,7 +1655,7 @@ export function IntegratedFileBrowser({
                                                     {file.permissions}
                                                 </div>
                                                 <div
-                                                    className="text-sm text-muted-foreground truncate"
+                                                    className="text-sm text-muted-foreground truncate flex-shrink-0"
                                                     style={{
                                                         width: `${columnWidths.owner}px`,
                                                     }}
@@ -1870,6 +1871,7 @@ export function IntegratedFileBrowser({
                             </ContextMenuItem>
                         </ContextMenuContent>
                     </ContextMenu>
+                    <ScrollBar orientation="horizontal" />
                 </ScrollArea>
             </div>
 

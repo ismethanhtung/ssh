@@ -40,6 +40,7 @@ export function PtyTerminal({
     const wsRef = React.useRef<WebSocket | null>(null);
     const rendererRef = React.useRef<string>("canvas");
     const containerRef = React.useRef<HTMLDivElement | null>(null);
+    const ptyReadyRef = React.useRef<boolean>(false); // Track if PTY session is ready
 
     // Flow control - inspired by ttyd
     const flowControlRef = React.useRef({
@@ -234,6 +235,7 @@ export function PtyTerminal({
                                 msg.message
                             );
                             if (msg.message.includes("PTY session started")) {
+                                ptyReadyRef.current = true; // Mark PTY as ready
                                 term.writeln(
                                     "\x1b[32m✓ PTY session started\x1b[0m"
                                 );
@@ -310,10 +312,17 @@ export function PtyTerminal({
                             break;
 
                         case "Error":
-                            console.error("[PTY Terminal] Error:", msg.message);
-                            term.write(
-                                `\r\n\x1b[31m[Error: ${msg.message}]\x1b[0m\r\n`
-                            );
+                            // Handle "PTY session not found" gracefully - this is normal when session is closing
+                            if (msg.message.includes("PTY session not found")) {
+                                console.debug(`[PTY Terminal] [${sessionId}] PTY session not found (session may be closing)`);
+                                ptyReadyRef.current = false; // Mark PTY as not ready
+                                // Don't show error to user - this is expected during cleanup
+                            } else {
+                                console.error("[PTY Terminal] Error:", msg.message);
+                                term.write(
+                                    `\r\n\x1b[31m[Error: ${msg.message}]\x1b[0m\r\n`
+                                );
+                            }
                             break;
 
                         default:
@@ -365,7 +374,10 @@ export function PtyTerminal({
         // Handle user input
         const inputDisposable = term.onData((data: string) => {
             const ws = wsRef.current;
-            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            // Only send input if WebSocket is open AND PTY session is ready
+            if (!ws || ws.readyState !== WebSocket.OPEN || !ptyReadyRef.current) {
+                return;
+            }
 
             // Convert string to bytes for binary data
             const encoder = new TextEncoder();
@@ -389,7 +401,8 @@ export function PtyTerminal({
         // Handle terminal resize
         const resizeDisposable = term.onResize(({ cols, rows }) => {
             const ws = wsRef.current;
-            if (ws && ws.readyState === WebSocket.OPEN) {
+            // Only send resize if WebSocket is open AND PTY session is ready
+            if (ws && ws.readyState === WebSocket.OPEN && ptyReadyRef.current) {
                 const resizeMsg = {
                     type: "Resize",
                     session_id: sessionId,
@@ -439,15 +452,20 @@ export function PtyTerminal({
         return () => {
             console.log(`[PTY Terminal] [${sessionId}] Cleaning up`);
             isRunning = false;
+            ptyReadyRef.current = false; // Mark PTY as not ready
 
-            // Close PTY session via WebSocket
+            // Close PTY session via WebSocket (only if PTY was ready)
             const ws = wsRef.current;
             if (ws && ws.readyState === WebSocket.OPEN) {
                 const closeMsg = {
                     type: "Close",
                     session_id: sessionId,
                 };
-                ws.send(JSON.stringify(closeMsg));
+                try {
+                    ws.send(JSON.stringify(closeMsg));
+                } catch (e) {
+                    console.debug(`[PTY Terminal] [${sessionId}] Failed to send close message:`, e);
+                }
                 ws.close();
             }
 

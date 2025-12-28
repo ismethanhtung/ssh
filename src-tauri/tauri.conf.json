@@ -15,12 +15,14 @@
                 "title": "ssh",
                 "width": 1920,
                 "height": 1080,
+                "minWidth": 900,
+                "minHeight": 600,
                 "fullscreen": false,
                 "maximized": true,
                 "resizable": true,
                 "decorations": true,
-                "transparent": true,
-                "titleBarStyle": "Overlay",
+                "transparent": false,
+                "titleBarStyle": "Visible",
                 "hiddenTitle": false
             }
         ],

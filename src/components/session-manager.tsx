@@ -14,6 +14,8 @@ import {
     FolderPlus,
     Unplug,
     FolderEdit,
+    Moon,
+    Sun,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -47,6 +49,7 @@ import {
     ContextMenuTrigger,
 } from "./ui/context-menu";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 
 interface SessionNode {
     id: string;
@@ -87,6 +90,8 @@ export function SessionManager({
     onDeleteSession,
     onDuplicateSession,
 }: SessionManagerProps) {
+    const { theme, setTheme } = useTheme();
+
     // Load sessions from storage
     const loadSessions = (): SessionNode[] => {
         const tree = SessionStorageManager.buildSessionTree(activeSessions);
@@ -675,11 +680,10 @@ export function SessionManager({
 
     return (
         <>
-            <div className="bg-card border-r border-border h-full flex flex-col">
+            <div className="bg-background border-r border-border h-full flex flex-col">
                 {/* Session Browser */}
                 <div className="flex-1 min-h-0 flex flex-col">
-                    <div className="py-2 px-3 border-b border-border flex items-center justify-between">
-                        <h3 className="font-medium">Session Manager</h3>
+                    <div className="py-2 px-3 border-b border-border flex items-center justify-between gap-2">
                         <Button
                             variant="ghost"
                             size="sm"
@@ -687,6 +691,25 @@ export function SessionManager({
                             className="h-7 w-7 p-0"
                         >
                             <FolderPlus className="w-4 h-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                                setTheme(theme === "dark" ? "light" : "dark")
+                            }
+                            className="h-7 w-7 p-0"
+                            title={
+                                theme === "dark"
+                                    ? "Chuyển sang chế độ sáng"
+                                    : "Chuyển sang chế độ tối"
+                            }
+                        >
+                            {theme === "dark" ? (
+                                <Sun className="w-4 h-4" />
+                            ) : (
+                                <Moon className="w-4 h-4" />
+                            )}
                         </Button>
                     </div>
                     <div className="flex-1 overflow-auto">
@@ -714,53 +737,54 @@ export function SessionManager({
 
                 {/* Connection Details */}
                 <div className="border-t border-border">
-                    <div className="p-3">
-                        <h3 className="font-medium text-sm mb-3">
+                    <div className="px-3 py-1.5 border-b border-border">
+                        <h3 className="font-medium text-[11px] text-muted-foreground">
                             Connection Details
                         </h3>
-
+                    </div>
+                    <div className="p-2">
                         {!selectedSession ||
                         selectedSession.type === "folder" ? (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-[11px] text-muted-foreground">
                                 No session selected
                             </p>
                         ) : (
-                            <div className="space-y-3">
-                                <div className="space-y-2">
+                            <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium">
+                                        <span className="text-[11px] font-medium text-muted-foreground">
                                             Name
                                         </span>
-                                        <span className="text-xs">
+                                        <span className="text-[11px] text-foreground">
                                             {selectedSession.name}
                                         </span>
                                     </div>
 
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium">
+                                        <span className="text-[11px] font-medium text-muted-foreground">
                                             Type
                                         </span>
                                         <Badge
                                             variant="outline"
-                                            className="text-xs py-0 px-1 h-5"
+                                            className="text-[11px] py-0 px-1.5 h-5 font-medium"
                                         >
                                             {selectedSession.protocol}
                                         </Badge>
                                     </div>
 
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium">
+                                        <span className="text-[11px] font-medium text-muted-foreground">
                                             Status
                                         </span>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5">
                                             <div
-                                                className={`w-2 h-2 rounded-full ${
+                                                className={`w-1.5 h-1.5 rounded-full ${
                                                     selectedSession.isConnected
                                                         ? "bg-green-500"
                                                         : "bg-gray-500"
                                                 }`}
                                             />
-                                            <span className="text-xs">
+                                            <span className="text-[11px] text-foreground">
                                                 {selectedSession.isConnected
                                                     ? "Connected"
                                                     : "Disconnected"}
@@ -770,10 +794,10 @@ export function SessionManager({
 
                                     {selectedSession.lastConnected && (
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-medium">
+                                            <span className="text-[11px] font-medium text-muted-foreground">
                                                 Last Connected
                                             </span>
-                                            <span className="text-xs">
+                                            <span className="text-[11px] text-foreground">
                                                 {new Date(
                                                     selectedSession.lastConnected
                                                 ).toLocaleString()}
@@ -784,23 +808,23 @@ export function SessionManager({
 
                                 {selectedSession.host && (
                                     <>
-                                        <Separator />
-                                        <div className="space-y-2">
+                                        <Separator className="my-2" />
+                                        <div className="space-y-1.5">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs font-medium">
+                                                <span className="text-[11px] font-medium text-muted-foreground">
                                                     Host
                                                 </span>
-                                                <span className="text-xs">
+                                                <span className="text-[11px] text-foreground">
                                                     {selectedSession.host}
                                                 </span>
                                             </div>
 
                                             {selectedSession.username && (
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-xs font-medium">
+                                                    <span className="text-[11px] font-medium text-muted-foreground">
                                                         Username
                                                     </span>
-                                                    <span className="text-xs">
+                                                    <span className="text-[11px] text-foreground">
                                                         {
                                                             selectedSession.username
                                                         }
@@ -809,10 +833,10 @@ export function SessionManager({
                                             )}
 
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs font-medium">
+                                                <span className="text-[11px] font-medium text-muted-foreground">
                                                     Port
                                                 </span>
-                                                <span className="text-xs">
+                                                <span className="text-[11px] text-foreground">
                                                     {selectedSession.port ||
                                                         (selectedSession.protocol ===
                                                         "SSH"
@@ -828,15 +852,15 @@ export function SessionManager({
                                     selectedSessionData.forwardPorts.length >
                                         0 && (
                                         <>
-                                            <Separator />
-                                            <div className="space-y-2">
+                                            <Separator className="my-2" />
+                                            <div className="space-y-1.5">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-xs font-medium">
+                                                    <span className="text-[11px] font-medium text-muted-foreground">
                                                         SSH Tunnels
                                                     </span>
                                                     <Badge
                                                         variant="outline"
-                                                        className="text-xs py-0 px-1 h-5"
+                                                        className="text-[11px] py-0 px-1.5 h-5 font-medium"
                                                     >
                                                         {
                                                             selectedSessionData
@@ -850,7 +874,7 @@ export function SessionManager({
                                                         (fp, index) => (
                                                             <div
                                                                 key={index}
-                                                                className="text-xs text-muted-foreground"
+                                                                className="text-[11px] text-muted-foreground"
                                                             >
                                                                 L:{fp.localPort}{" "}
                                                                 →{" "}
@@ -864,23 +888,23 @@ export function SessionManager({
                                         </>
                                     )}
 
-                                <Separator />
+                                <Separator className="my-2" />
 
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium">
+                                        <span className="text-[11px] font-medium text-muted-foreground">
                                             Protocol
                                         </span>
-                                        <span className="text-xs">
+                                        <span className="text-[11px] text-foreground">
                                             {selectedSession.protocol}
                                         </span>
                                     </div>
 
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-medium">
+                                        <span className="text-[11px] font-medium text-muted-foreground">
                                             Description
                                         </span>
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-[11px] text-muted-foreground">
                                             -
                                         </span>
                                     </div>

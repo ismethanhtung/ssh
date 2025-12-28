@@ -312,16 +312,16 @@ export function LogViewer({ sessionId }: LogViewerProps) {
         <div className="h-full flex flex-col overflow-hidden bg-background">
             {/* Professional Integrated Toolbar */}
             <div className="flex-none border-b border-border bg-muted/20 px-3 py-2 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center w-full">
+                    <div className="flex items-center gap-2 w-full">
                         <Select
                             value={selectedLogPath}
                             onValueChange={setSelectedLogPath}
                         >
-                            <SelectTrigger className="h-7 w-[200px] bg-background/50 border-border/50 text-[10px] font-medium transition-all hover:bg-background overflow-hidden [&>span]:truncate min-h-0 max-h-7 py-0">
+                            <SelectTrigger className="h-7 w-full flex-1 bg-background/50 border-border/50 text-[10px] font-medium transition-all hover:bg-background overflow-hidden [&>span]:truncate min-h-0 max-h-7 py-0">
                                 <SelectValue placeholder="Select log file..." />
                             </SelectTrigger>
-                            <SelectContent className="max-w-[240px]">
+                            <SelectContent>
                                 {logFiles.map((file) => (
                                     <SelectItem
                                         key={file.path}
@@ -440,7 +440,7 @@ export function LogViewer({ sessionId }: LogViewerProps) {
                                 <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center mb-3">
                                     <FileText className="w-5 h-5 text-muted-foreground/20" />
                                 </div>
-                                <h3 className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">
+                                <h3 className="text-[11px]    ">
                                     No Source Selected
                                 </h3>
                             </div>

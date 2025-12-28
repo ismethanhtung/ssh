@@ -5,8 +5,11 @@ use russh_sftp::client::SftpSession;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::mpsc;
 use tokio::net::TcpListener;
+
+// Enhanced PTY session module
+mod pty_session;
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ForwardPort {
@@ -44,13 +47,9 @@ pub struct SshClient {
     forwarding_tasks: Vec<tokio::task::JoinHandle<()>>,
 }
 
-// PTY session handle for interactive shell
-pub struct PtySession {
-    pub input_tx: mpsc::Sender<Vec<u8>>,
-    pub output_rx: Arc<tokio::sync::Mutex<mpsc::Receiver<Vec<u8>>>>,
-    #[allow(dead_code)]
-    pub channel_id: ChannelId,
-}
+// Re-export the enhanced PTY session as the main PtySession
+pub use pty_session::PtySession;
+
 
 pub struct Client;
 
@@ -322,7 +321,7 @@ impl SshClient {
         self.session.is_some()
     }
 
-    /// Create a persistent PTY shell session (like ttyd)
+    /// Create a persistent PTY shell session with enhanced safety
     /// This enables interactive commands like vim, less, more, top, etc.
     pub async fn create_pty_session(
         &self,
@@ -330,89 +329,8 @@ impl SshClient {
         rows: u32,
     ) -> Result<PtySession> {
         if let Some(session) = &self.session {
-            // Open a new SSH channel
-            let mut channel = session.channel_open_session().await?;
-            
-            // Request PTY with terminal type and dimensions
-            // Similar to ttyd's approach: xterm-256color terminal
-            channel
-                .request_pty(
-                    true,                    // want_reply
-                    "xterm-256color",        // terminal type (like ttyd)
-                    cols,                    // columns
-                    rows,                    // rows
-                    0,                       // pixel_width (not used)
-                    0,                       // pixel_height (not used)
-                    &[],                     // terminal modes
-                )
-                .await?;
-            
-            // Start interactive shell
-            channel.request_shell(true).await?;
-            
-            // Create channels for bidirectional communication (like ttyd's pty_buf)
-            // Increased capacity for better buffering during fast input
-            let (input_tx, mut input_rx) = mpsc::channel::<Vec<u8>>(1000);  // Increased from 100
-            let (output_tx, output_rx) = mpsc::channel::<Vec<u8>>(2000);    // Increased from 1000
-            
-            let channel_id = channel.id();
-            
-            // Clone channel for input task
-            let input_channel = channel.make_writer();
-            
-            // Spawn task to handle input (frontend → SSH)
-            // This is similar to ttyd's pty_write and INPUT command handling
-            // Key: immediate write + flush for responsiveness
-            tokio::spawn(async move {
-                let mut writer = input_channel;
-                while let Some(data) = input_rx.recv().await {
-                    // Write data immediately
-                    if let Err(e) = writer.write_all(&data).await {
-                        eprintln!("[PTY] Failed to send data to SSH: {}", e);
-                        break;
-                    }
-                    // Critical: flush immediately after write (like ttyd)
-                    // This ensures data is sent to PTY without buffering delay
-                    if let Err(e) = writer.flush().await {
-                        eprintln!("[PTY] Failed to flush data to SSH: {}", e);
-                        break;
-                    }
-                }
-            });
-            
-            // Spawn task to handle output (SSH → frontend)
-            // This is similar to ttyd's process_read_cb and OUTPUT command
-            tokio::spawn(async move {
-                loop {
-                    match channel.wait().await {
-                        Some(ChannelMsg::Data { data }) => {
-                            if output_tx.send(data.to_vec()).await.is_err() {
-                                break;
-                            }
-                        }
-                        Some(ChannelMsg::ExtendedData { data, .. }) => {
-                            // stderr data (also send to output)
-                            if output_tx.send(data.to_vec()).await.is_err() {
-                                break;
-                            }
-                        }
-                        Some(ChannelMsg::Eof) | Some(ChannelMsg::Close) | None => {
-                            eprintln!("[PTY] Channel closed");
-                            break;
-                        }
-                        Some(ChannelMsg::ExitStatus { exit_status }) => {
-                            eprintln!("[PTY] Process exited with status: {}", exit_status);
-                        }
-                        _ => {}
-                    }
-                }
-            });
-            
-            Ok(PtySession {
-                input_tx,
-                output_rx: Arc::new(tokio::sync::Mutex::new(output_rx)),
-                channel_id,
-            })
+            // Use the enhanced PTY session with proper error handling
+            PtySession::create(session, cols, rows).await
         } else {
             Err(anyhow::anyhow!("Not connected"))
         }
