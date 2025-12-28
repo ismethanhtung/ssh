@@ -19,17 +19,32 @@ import {
     SelectValue,
 } from "./ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Textarea } from "./ui/textarea";
 import { Switch } from "./ui/switch";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
+import { ScrollArea } from "./ui/scroll-area";
+import { Card, CardContent } from "./ui/card";
 import {
     ConnectionProfileManager,
     type ConnectionProfile,
 } from "../lib/connection-profiles";
 import { SessionStorageManager } from "../lib/session-storage";
 import { toast } from "sonner";
-import { Server, Key } from "lucide-react";
+import { 
+    Server, 
+    Key, 
+    Globe, 
+    Shield, 
+    Network, 
+    Settings2, 
+    Plus, 
+    Trash2,
+    FolderOpen,
+    Loader2,
+    ArrowRightLeft,
+    ChevronRight
+} from "lucide-react";
+import { cn } from "./ui/utils";
 
 interface ConnectionDialogProps {
     open: boolean;
@@ -471,600 +486,589 @@ export function ConnectionDialog({
         setConfig((prev) => ({ ...prev, ...updates }));
     };
 
+    // Compact input styles matching Monitor/Logs/Alerts
+    const inputClassName = "h-8 !text-[12px] !font-normal bg-background/40 border-border/40 focus:border-primary/40 focus:bg-background/80 transition-all placeholder:text-muted-foreground/40";
+    const labelClassName = "text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-1 block";
+    const selectTriggerClassName = "h-8 text-[11px] font-medium bg-background/40 border-border/40 transition-all hover:bg-background/60 shadow-none";
+    const cardContentClassName = "p-4 space-y-4";
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                    <DialogTitle>
-                        {editingSession ? "Edit Session" : "New Session"}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Configure your connection settings
-                    </DialogDescription>
-                </DialogHeader>
-
-                <Tabs defaultValue="connection" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5 bg-transparent gap-1 p-0 h-auto mb-4">
-                        <TabsTrigger
-                            value="connection"
-                            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md px-3 py-1.5 text-sm font-medium"
-                        >
-                            Connection
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="authentication"
-                            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md px-3 py-1.5 text-sm font-medium"
-                        >
-                            Authentication
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="proxy"
-                            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md px-3 py-1.5 text-sm font-medium"
-                        >
-                            Proxy
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="tunnels"
-                            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md px-3 py-1.5 text-sm font-medium"
-                        >
-                            SSH Tunnels
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="advanced"
-                            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md px-3 py-1.5 text-sm font-medium"
-                        >
-                            Advanced
-                        </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="connection" className="space-y-4">
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="session-name">
-                                        Session Name
-                                    </Label>
-                                    <Input
-                                        id="session-name"
-                                        placeholder="My Server"
-                                        value={config.name}
-                                        onChange={(e) =>
-                                            updateConfig({
-                                                name: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="protocol">Protocol</Label>
-                                    <Select
-                                        value={config.protocol}
-                                        onValueChange={(
-                                            value: SessionConfig["protocol"]
-                                        ) => {
-                                            const defaultPorts = {
-                                                SSH: 22,
-                                                Telnet: 23,
-                                                Raw: 23,
-                                                Serial: 0,
-                                            };
-                                            updateConfig({
-                                                protocol: value,
-                                                port: defaultPorts[value],
-                                            });
-                                        }}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="SSH">
-                                                SSH
-                                            </SelectItem>
-                                            <SelectItem value="Telnet">
-                                                Telnet
-                                            </SelectItem>
-                                            <SelectItem value="Raw">
-                                                Raw
-                                            </SelectItem>
-                                            <SelectItem value="Serial">
-                                                Serial
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="host">Host</Label>
-                                    <Input
-                                        id="host"
-                                        placeholder="192.168.1.100 or example.com"
-                                        value={config.host}
-                                        onChange={(e) =>
-                                            updateConfig({
-                                                host: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="port">Port</Label>
-                                    <Input
-                                        id="port"
-                                        type="number"
-                                        value={config.port}
-                                        onChange={(e) =>
-                                            updateConfig({
-                                                port:
-                                                    parseInt(e.target.value) ||
-                                                    22,
-                                            })
-                                        }
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="username">Username</Label>
-                                <Input
-                                    id="username"
-                                    placeholder="root"
-                                    value={config.username}
-                                    onChange={(e) =>
-                                        updateConfig({
-                                            username: e.target.value,
-                                        })
-                                    }
-                                />
-                            </div>
+            <DialogContent className="sm:max-w-[520px] p-0 gap-0 overflow-hidden">
+                {/* Compact Header */}
+                <div className="px-4 py-3 border-b border-border/50 bg-muted/20">
+                    <div className="flex items-center gap-2">
+                        <div>
+                            <DialogTitle className="text-sm font-semibold py-1">
+                                {editingSession ? "Edit Session" : "New Session"}
+                            </DialogTitle>
                         </div>
-                    </TabsContent>
+                    </div>
+                </div>
 
-                    <TabsContent value="authentication" className="space-y-4">
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Authentication Method</Label>
-                                <Select
-                                    value={config.authMethod}
-                                    onValueChange={(
-                                        value: SessionConfig["authMethod"]
-                                    ) => updateConfig({ authMethod: value })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="password">
-                                            Password
-                                        </SelectItem>
-                                        <SelectItem value="publickey">
-                                            Public Key
-                                        </SelectItem>
-                                        <SelectItem value="keyboard-interactive">
-                                            Keyboard Interactive
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                {/* Compact Tabs */}
+                <Tabs defaultValue="connection" className="flex-1">
+                    <div className="px-3 py-1.5 border-b border-border/30 bg-muted/5">
+                        <TabsList className="h-8 w-full justify-start bg-transparent p-0 gap-0.5">
+                            <TabsTrigger
+                                value="connection"
+                                className="px-3 h-7 text-[10px] font-semibold rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm text-muted-foreground/70 hover:text-foreground transition-all"
+                            >
+                                Connection
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="authentication"
+                                className="px-3 h-7 text-[10px] font-semibold rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm text-muted-foreground/70 hover:text-foreground transition-all"
+                            >
+                                Auth
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="proxy"
+                                className="px-3 h-7 text-[10px] font-semibold rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm text-muted-foreground/70 hover:text-foreground transition-all"
+                            >
+                                Proxy
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="tunnels"
+                                className="px-3 h-7 text-[10px] font-semibold rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm text-muted-foreground/70 hover:text-foreground transition-all"
+                            >
+                                Tunnels
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="advanced"
+                                className="px-3 h-7 text-[10px] font-semibold rounded-md data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm text-muted-foreground/70 hover:text-foreground transition-all"
+                            >
+                                Advanced
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
-                            {config.authMethod === "password" && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        placeholder="Enter password"
-                                        value={config.password}
-                                        onChange={(e) =>
-                                            updateConfig({
-                                                password: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                            )}
-
-                            {config.authMethod === "publickey" && (
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="private-key">
-                                            Private Key File
-                                        </Label>
-                                        <Input
-                                            id="private-key"
-                                            placeholder="~/.ssh/id_rsa"
-                                            value={config.privateKeyPath}
-                                            onChange={(e) =>
-                                                updateConfig({
-                                                    privateKeyPath:
-                                                        e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="passphrase">
-                                            Passphrase (optional)
-                                        </Label>
-                                        <Input
-                                            id="passphrase"
-                                            type="password"
-                                            placeholder="Enter passphrase"
-                                            value={config.passphrase}
-                                            onChange={(e) =>
-                                                updateConfig({
-                                                    passphrase: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="proxy" className="space-y-4">
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Proxy Type</Label>
-                                <Select
-                                    value={config.proxyType}
-                                    onValueChange={(value: string) =>
-                                        updateConfig({
-                                            proxyType:
-                                                value as SessionConfig["proxyType"],
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">
-                                            No Proxy
-                                        </SelectItem>
-                                        <SelectItem value="http">
-                                            HTTP Proxy
-                                        </SelectItem>
-                                        <SelectItem value="socks4">
-                                            SOCKS4
-                                        </SelectItem>
-                                        <SelectItem value="socks5">
-                                            SOCKS5
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {config.proxyType !== "none" && (
-                                <>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div className="col-span-2 space-y-2">
-                                            <Label htmlFor="proxy-host">
-                                                Proxy Host
-                                            </Label>
+                    <ScrollArea className="h-[230px]">
+                        <div className="px-1">
+                            <TabsContent value="connection" className="mt-0 outline-none">
+                                <div className={cardContentClassName}>
+                                    <div className="grid grid-cols-5 gap-4">
+                                        <div className="col-span-3 space-y-1">
+                                            <Label className={labelClassName}>Session Name</Label>
                                             <Input
-                                                id="proxy-host"
-                                                placeholder="proxy.example.com"
-                                                value={config.proxyHost}
-                                                onChange={(e) =>
-                                                    updateConfig({
-                                                        proxyHost:
-                                                            e.target.value,
-                                                    })
-                                                }
+                                                placeholder="e.g. Production Web"
+                                                value={config.name}
+                                                onChange={(e) => updateConfig({ name: e.target.value })}
+                                                className={inputClassName}
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="proxy-port">
-                                                Proxy Port
-                                            </Label>
-                                            <Input
-                                                id="proxy-port"
-                                                type="number"
-                                                value={config.proxyPort}
-                                                onChange={(e) =>
+                                        <div className="col-span-2 space-y-1">
+                                            <Label className={labelClassName}>Protocol</Label>
+                                            <Select
+                                                value={config.protocol}
+                                                onValueChange={(value: SessionConfig["protocol"]) => {
+                                                    const defaultPorts = {
+                                                        SSH: 22,
+                                                        Telnet: 23,
+                                                        Raw: 23,
+                                                        Serial: 0,
+                                                    };
                                                     updateConfig({
-                                                        proxyPort:
-                                                            parseInt(
-                                                                e.target.value
-                                                            ) || 8080,
-                                                    })
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="proxy-username">
-                                                Proxy Username
-                                            </Label>
-                                            <Input
-                                                id="proxy-username"
-                                                placeholder="Optional"
-                                                value={config.proxyUsername}
-                                                onChange={(e) =>
-                                                    updateConfig({
-                                                        proxyUsername:
-                                                            e.target.value,
-                                                    })
-                                                }
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="proxy-password">
-                                                Proxy Password
-                                            </Label>
-                                            <Input
-                                                id="proxy-password"
-                                                type="password"
-                                                placeholder="Optional"
-                                                value={config.proxyPassword}
-                                                onChange={(e) =>
-                                                    updateConfig({
-                                                        proxyPassword:
-                                                            e.target.value,
-                                                    })
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="tunnels" className="space-y-4">
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-7 gap-2 items-end">
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="local-port">
-                                        Local Port
-                                    </Label>
-                                    <Input
-                                        id="local-port"
-                                        type="number"
-                                        placeholder="14333"
-                                        value={newForward.localPort || ""}
-                                        onChange={(e) =>
-                                            setNewForward({
-                                                ...newForward,
-                                                localPort:
-                                                    parseInt(e.target.value) ||
-                                                    0,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="remote-host">
-                                        Remote Host
-                                    </Label>
-                                    <Input
-                                        id="remote-host"
-                                        placeholder="172.17.0.1"
-                                        value={newForward.remoteHost}
-                                        onChange={(e) =>
-                                            setNewForward({
-                                                ...newForward,
-                                                remoteHost: e.target.value,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="remote-port">
-                                        Remote Port
-                                    </Label>
-                                    <Input
-                                        id="remote-port"
-                                        type="number"
-                                        placeholder="1433"
-                                        value={newForward.remotePort || ""}
-                                        onChange={(e) =>
-                                            setNewForward({
-                                                ...newForward,
-                                                remotePort:
-                                                    parseInt(e.target.value) ||
-                                                    0,
-                                            })
-                                        }
-                                    />
-                                </div>
-                                <Button
-                                    type="button"
-                                    className="w-full"
-                                    onClick={() => {
-                                        if (
-                                            newForward.localPort &&
-                                            newForward.remoteHost &&
-                                            newForward.remotePort
-                                        ) {
-                                            // Check if local port is already in use in this session config
-                                            if (
-                                                config.forwardPorts?.some(
-                                                    (fp) =>
-                                                        fp.localPort ===
-                                                        newForward.localPort
-                                                )
-                                            ) {
-                                                toast.error(
-                                                    `Local port ${newForward.localPort} is already configured`
-                                                );
-                                                return;
-                                            }
-                                            const updatedPorts = [
-                                                ...(config.forwardPorts || []),
-                                                { ...newForward },
-                                            ];
-                                            updateConfig({
-                                                forwardPorts: updatedPorts,
-                                            });
-                                            setNewForward({
-                                                localPort: 0,
-                                                remoteHost: "127.0.0.1",
-                                                remotePort: 0,
-                                            });
-                                        } else {
-                                            toast.error(
-                                                "Please fill all tunnel fields"
-                                            );
-                                        }
-                                    }}
-                                >
-                                    Add
-                                </Button>
-                            </div>
-
-                            <Separator />
-
-                            <div className="space-y-2">
-                                <Label>Configured Tunnels (L)</Label>
-                                <div className="border rounded-md divide-y max-h-[200px] overflow-y-auto">
-                                    {config.forwardPorts &&
-                                    config.forwardPorts.length > 0 ? (
-                                        config.forwardPorts.map((fp, index) => (
-                                            <div
-                                                key={index}
-                                                className="flex items-center justify-between p-3 text-sm"
+                                                        protocol: value,
+                                                        port: defaultPorts[value],
+                                                    });
+                                                }}
                                             >
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="outline">
-                                                        L
-                                                    </Badge>
-                                                    <span>
-                                                        {fp.localPort} :{" "}
-                                                        {fp.remoteHost} :{" "}
-                                                        {fp.remotePort}
-                                                    </span>
+                                                <SelectTrigger className={cn(selectTriggerClassName, "max-h-8 w-full")}>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="SSH">SSH</SelectItem>
+                                                    <SelectItem value="Telnet">Telnet</SelectItem>
+                                                    <SelectItem value="Raw">Raw</SelectItem>
+                                                    <SelectItem value="Serial">Serial</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-6 gap-4">
+                                        <div className="col-span-4 space-y-1">
+                                            <Label className={labelClassName}>Host Address</Label>
+                                            <Input
+                                                placeholder="192.168.1.1 or domain"
+                                                value={config.host}
+                                                onChange={(e) => updateConfig({ host: e.target.value })}
+                                                className={inputClassName}
+                                            />
+                                        </div>
+                                        <div className="col-span-2 space-y-1">
+                                            <Label className={labelClassName}>Port</Label>
+                                            <Input
+                                                type="number"
+                                                value={config.port}
+                                                onChange={(e) =>
+                                                    updateConfig({
+                                                        port: parseInt(e.target.value) || 22,
+                                                    })
+                                                }
+                                                className={cn(inputClassName, "text-center font-mono")}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <Label className={labelClassName}>Username</Label>
+                                        <Input
+                                            placeholder="root / ubuntu / admin"
+                                            value={config.username}
+                                            onChange={(e) => updateConfig({ username: e.target.value })}
+                                            className={inputClassName}
+                                        />
+                                    </div>
+                                </div>
+                            </TabsContent>
+
+                            {/* Authentication Tab */}
+                            <TabsContent value="authentication" className="mt-0 space-y-4">
+                                <CardContent className="p-3 space-y-3">
+                                        <div className="space-y-1.5">
+                                            <Label className={labelClassName}>
+                                                Authentication Method
+                                            </Label>
+                                            <Select
+                                                value={config.authMethod}
+                                                onValueChange={(value: SessionConfig["authMethod"]) =>
+                                                    updateConfig({ authMethod: value })
+                                                }
+                                            >
+                                                <SelectTrigger className={selectTriggerClassName}>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="password" className="text-xs">
+                                                        Password
+                                                    </SelectItem>
+                                                    <SelectItem value="publickey" className="text-xs">
+                                                        Public Key
+                                                    </SelectItem>
+                                                    <SelectItem value="keyboard-interactive" className="text-xs">
+                                                        Keyboard Interactive
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <Separator className="my-2 bg-border/30" />
+
+                                        {config.authMethod === "password" && (
+                                            <div className="space-y-1.5">
+                                                <Label className={labelClassName}>
+                                                    Password
+                                                </Label>
+                                                <Input
+                                                    type="password"
+                                                    placeholder="Enter password"
+                                                    value={config.password}
+                                                    onChange={(e) =>
+                                                        updateConfig({ password: e.target.value })
+                                                    }
+                                                    className={inputClassName}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {config.authMethod === "publickey" && (
+                                            <div className="space-y-3">
+                                                <div className="space-y-1.5">
+                                                    <Label className={labelClassName}>
+                                                        Private Key File
+                                                    </Label>
+                                                    <Input
+                                                        placeholder="~/.ssh/id_rsa"
+                                                        value={config.privateKeyPath}
+                                                        onChange={(e) =>
+                                                            updateConfig({
+                                                                privateKeyPath: e.target.value,
+                                                            })
+                                                        }
+                                                        className={inputClassName}
+                                                    />
                                                 </div>
+                                                <div className="space-y-1.5">
+                                                    <Label className={labelClassName}>
+                                                        Passphrase (optional)
+                                                    </Label>
+                                                    <Input
+                                                        type="password"
+                                                        placeholder="Enter passphrase"
+                                                        value={config.passphrase}
+                                                        onChange={(e) =>
+                                                            updateConfig({ passphrase: e.target.value })
+                                                        }
+                                                        className={inputClassName}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                            </TabsContent>
+
+                            {/* Proxy Tab */}
+                            <TabsContent value="proxy" className="mt-0 space-y-4">
+                                    <CardContent className="p-3 space-y-3">
+                                        <div className="space-y-1.5">
+                                            <Label className={labelClassName}>
+                                                Proxy Type
+                                            </Label>
+                                            <Select
+                                                value={config.proxyType}
+                                                onValueChange={(value: string) =>
+                                                    updateConfig({
+                                                        proxyType: value as SessionConfig["proxyType"],
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger className={selectTriggerClassName}>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="none" className="text-xs">
+                                                        No Proxy
+                                                    </SelectItem>
+                                                    <SelectItem value="http" className="text-xs">
+                                                        HTTP Proxy
+                                                    </SelectItem>
+                                                    <SelectItem value="socks4" className="text-xs">
+                                                        SOCKS4
+                                                    </SelectItem>
+                                                    <SelectItem value="socks5" className="text-xs">
+                                                        SOCKS5
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        {config.proxyType !== "none" && (
+                                            <>
+                                                <Separator className="my-2 bg-border/30" />
+
+                                                <div className="grid grid-cols-4 gap-3">
+                                                    <div className="col-span-3 space-y-1.5">
+                                                        <Label className={labelClassName}>
+                                                            Proxy Host
+                                                        </Label>
+                                                        <Input
+                                                            placeholder="proxy.example.com"
+                                                            value={config.proxyHost}
+                                                            onChange={(e) =>
+                                                                updateConfig({
+                                                                    proxyHost: e.target.value,
+                                                                })
+                                                            }
+                                                            className={inputClassName}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>
+                                                            Port
+                                                        </Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={config.proxyPort}
+                                                            onChange={(e) =>
+                                                                updateConfig({
+                                                                    proxyPort:
+                                                                        parseInt(e.target.value) || 8080,
+                                                                })
+                                                            }
+                                                            className={cn(inputClassName, "text-center")}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>
+                                                            Username
+                                                        </Label>
+                                                        <Input
+                                                            placeholder="Optional"
+                                                            value={config.proxyUsername}
+                                                            onChange={(e) =>
+                                                                updateConfig({
+                                                                    proxyUsername: e.target.value,
+                                                                })
+                                                            }
+                                                            className={inputClassName}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>
+                                                            Password
+                                                        </Label>
+                                                        <Input
+                                                            type="password"
+                                                            placeholder="Optional"
+                                                            value={config.proxyPassword}
+                                                            onChange={(e) =>
+                                                                updateConfig({
+                                                                    proxyPassword: e.target.value,
+                                                                })
+                                                            }
+                                                            className={inputClassName}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </CardContent>
+                            </TabsContent>
+
+                            {/* Tunnels Tab */}
+                            <TabsContent value="tunnels" className="mt-0 space-y-4">
+                                    <CardContent className="p-3 space-y-3">
+                                        {/* Add New Tunnel */}
+                                        <div className="space-y-2">
+                                            <Label className={labelClassName}>
+                                                Add Port Forward
+                                            </Label>
+                                            <div className="flex items-center gap-2">
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Local"
+                                                    value={newForward.localPort || ""}
+                                                    onChange={(e) =>
+                                                        setNewForward({
+                                                            ...newForward,
+                                                            localPort: parseInt(e.target.value) || 0,
+                                                        })
+                                                    }
+                                                    className={cn(inputClassName, "w-20 text-center")}
+                                                />
+                                                <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                                                <Input
+                                                    placeholder="Remote Host"
+                                                    value={newForward.remoteHost}
+                                                    onChange={(e) =>
+                                                        setNewForward({
+                                                            ...newForward,
+                                                            remoteHost: e.target.value,
+                                                        })
+                                                    }
+                                                    className={cn(inputClassName, "flex-1")}
+                                                />
+                                                <span className="text-muted-foreground text-xs">:</span>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Port"
+                                                    value={newForward.remotePort || ""}
+                                                    onChange={(e) =>
+                                                        setNewForward({
+                                                            ...newForward,
+                                                            remotePort: parseInt(e.target.value) || 0,
+                                                        })
+                                                    }
+                                                    className={cn(inputClassName, "w-20 text-center")}
+                                                />
                                                 <Button
-                                                    variant="ghost"
+                                                    type="button"
                                                     size="sm"
-                                                    className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    className="h-8 w-8 p-0"
                                                     onClick={() => {
-                                                        const updatedPorts =
-                                                            config.forwardPorts?.filter(
-                                                                (_, i) =>
-                                                                    i !== index
-                                                            );
-                                                        updateConfig({
-                                                            forwardPorts:
-                                                                updatedPorts,
-                                                        });
+                                                        if (
+                                                            newForward.localPort &&
+                                                            newForward.remoteHost &&
+                                                            newForward.remotePort
+                                                        ) {
+                                                            if (
+                                                                config.forwardPorts?.some(
+                                                                    (fp) =>
+                                                                        fp.localPort === newForward.localPort
+                                                                )
+                                                            ) {
+                                                                toast.error(
+                                                                    `Local port ${newForward.localPort} is already configured`
+                                                                );
+                                                                return;
+                                                            }
+                                                            const updatedPorts = [
+                                                                ...(config.forwardPorts || []),
+                                                                { ...newForward },
+                                                            ];
+                                                            updateConfig({ forwardPorts: updatedPorts });
+                                                            setNewForward({
+                                                                localPort: 0,
+                                                                remoteHost: "127.0.0.1",
+                                                                remotePort: 0,
+                                                            });
+                                                        } else {
+                                                            toast.error("Please fill all tunnel fields");
+                                                        }
                                                     }}
                                                 >
-                                                    Remove
+                                                    <Plus className="w-3.5 h-3.5" />
                                                 </Button>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="p-4 text-center text-muted-foreground text-sm">
-                                            No port forwarding configured
                                         </div>
-                                    )}
-                                </div>
-                            </div>
+
+                                        <Separator className="my-2 bg-border/30" />
+
+                                        {/* Configured Tunnels List */}
+                                        <div className="space-y-1.5">
+                                            <Label className={labelClassName}>
+                                                Configured Tunnels ({config.forwardPorts?.length || 0})
+                                            </Label>
+                                            <div className="rounded-md border border-border/30 divide-y divide-border/30 max-h-[140px] overflow-y-auto bg-background/30">
+                                                {config.forwardPorts && config.forwardPorts.length > 0 ? (
+                                                    config.forwardPorts.map((fp, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors group"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className="text-[9px] h-4 px-1.5 font-mono"
+                                                                >
+                                                                    L
+                                                                </Badge>
+                                                                <span className="text-xs font-mono text-foreground/80">
+                                                                    {fp.localPort}
+                                                                </span>
+                                                                <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                                                                <span className="text-xs font-mono text-foreground/80">
+                                                                    {fp.remoteHost}:{fp.remotePort}
+                                                                </span>
+                                                            </div>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
+                                                                onClick={() => {
+                                                                    const updatedPorts =
+                                                                        config.forwardPorts?.filter(
+                                                                            (_, i) => i !== index
+                                                                        );
+                                                                    updateConfig({
+                                                                        forwardPorts: updatedPorts,
+                                                                    });
+                                                                }}
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="px-3 py-4 text-center text-muted-foreground text-[10px]">
+                                                        No port forwarding configured
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                            </TabsContent>
+
+                            {/* Advanced Tab */}
+                            <TabsContent value="advanced" className="mt-0 space-y-4">
+                                    <CardContent className="p-3 space-y-3">
+                                        {/* Compression Toggle */}
+                                        <div className="flex items-center justify-between py-1">
+                                            <div className="space-y-0.5">
+                                                <Label className="text-xs font-medium">
+                                                    Compression
+                                                </Label>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    Compress data for slow connections
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                checked={config.compression}
+                                                onCheckedChange={(checked) =>
+                                                    updateConfig({ compression: checked })
+                                                }
+                                                className="scale-90"
+                                            />
+                                        </div>
+
+                                        <Separator className="my-1 bg-border/30" />
+
+                                        {/* Keep Alive Toggle */}
+                                        <div className="flex items-center justify-between py-1">
+                                            <div className="space-y-0.5">
+                                                <Label className="text-xs font-medium">
+                                                    Keep Alive
+                                                </Label>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    Prevent connection timeout
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                checked={config.keepAlive}
+                                                onCheckedChange={(checked) =>
+                                                    updateConfig({ keepAlive: checked })
+                                                }
+                                                className="scale-90"
+                                            />
+                                        </div>
+
+                                        {config.keepAlive && (
+                                            <>
+                                                <Separator className="my-1 bg-border/30" />
+                                                <div className="grid grid-cols-2 gap-3 pl-4">
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>
+                                                            Interval (sec)
+                                                        </Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={config.keepAliveInterval}
+                                                            onChange={(e) =>
+                                                                updateConfig({
+                                                                    keepAliveInterval:
+                                                                        parseInt(e.target.value) || 60,
+                                                                })
+                                                            }
+                                                            className={inputClassName}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>
+                                                            Max Count
+                                                        </Label>
+                                                        <Input
+                                                            type="number"
+                                                            value={config.serverAliveCountMax}
+                                                            onChange={(e) =>
+                                                                updateConfig({
+                                                                    serverAliveCountMax:
+                                                                        parseInt(e.target.value) || 3,
+                                                                })
+                                                            }
+                                                            className={inputClassName}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </CardContent>
+                            </TabsContent>
                         </div>
-                    </TabsContent>
-
-                    <TabsContent value="advanced" className="space-y-4">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label>Enable Compression</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Compress data to improve performance
-                                        over slow connections
-                                    </p>
-                                </div>
-                                <Switch
-                                    checked={config.compression}
-                                    onCheckedChange={(checked) =>
-                                        updateConfig({ compression: checked })
-                                    }
-                                />
-                            </div>
-
-                            <Separator />
-
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <Label>Keep Alive</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Send keep-alive messages to prevent
-                                        connection timeout
-                                    </p>
-                                </div>
-                                <Switch
-                                    checked={config.keepAlive}
-                                    onCheckedChange={(checked) =>
-                                        updateConfig({ keepAlive: checked })
-                                    }
-                                />
-                            </div>
-
-                            {config.keepAlive && (
-                                <div className="grid grid-cols-2 gap-4 ml-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="keep-alive-interval">
-                                            Interval (seconds)
-                                        </Label>
-                                        <Input
-                                            id="keep-alive-interval"
-                                            type="number"
-                                            value={config.keepAliveInterval}
-                                            onChange={(e) =>
-                                                updateConfig({
-                                                    keepAliveInterval:
-                                                        parseInt(
-                                                            e.target.value
-                                                        ) || 60,
-                                                })
-                                            }
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="max-count">
-                                            Max Count
-                                        </Label>
-                                        <Input
-                                            id="max-count"
-                                            type="number"
-                                            value={config.serverAliveCountMax}
-                                            onChange={(e) =>
-                                                updateConfig({
-                                                    serverAliveCountMax:
-                                                        parseInt(
-                                                            e.target.value
-                                                        ) || 3,
-                                                })
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
+                    </ScrollArea>
                 </Tabs>
 
-                <DialogFooter>
-                    <div className="flex flex-col gap-4 w-full">
+                {/* Compact Footer */}
+                <div className="px-4 py-3 ">
+                    <div className="flex flex-col gap-3">
+                        {/* Save Session Options */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Switch
                                     id="save-session"
                                     checked={saveAsSession}
                                     onCheckedChange={setSaveAsSession}
+                                    className="scale-90"
                                 />
                                 <Label
                                     htmlFor="save-session"
-                                    className="text-sm cursor-pointer"
+                                    className="text-[11px] cursor-pointer text-muted-foreground"
                                 >
-                                    Save as session
+                                    Save session
                                 </Label>
                             </div>
                             {saveAsSession && (
@@ -1072,7 +1076,8 @@ export function ConnectionDialog({
                                     value={sessionFolder}
                                     onValueChange={setSessionFolder}
                                 >
-                                    <SelectTrigger className="w-[200px]">
+                                    <SelectTrigger className="w-[156px] h-7 text-[10px] bg-background/50 border-border/50 max-h-8">
+                                        <FolderOpen className="w-3 h-3 mr-1.5 text-muted-foreground" />
                                         <SelectValue placeholder="Select folder" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -1081,12 +1086,13 @@ export function ConnectionDialog({
                                                 <SelectItem
                                                     key={folder}
                                                     value={folder}
+                                                    className="text-xs"
                                                 >
                                                     {folder}
                                                 </SelectItem>
                                             ))
                                         ) : (
-                                            <SelectItem value="All Sessions">
+                                            <SelectItem value="All Sessions" className="text-xs">
                                                 All Sessions
                                             </SelectItem>
                                         )}
@@ -1095,11 +1101,14 @@ export function ConnectionDialog({
                             )}
                         </div>
 
+                        {/* Action Buttons */}
                         <div className="flex justify-end gap-2">
                             <Button
                                 variant="outline"
+                                size="sm"
                                 onClick={handleCancelConnectionAttempt}
                                 disabled={isCancelling}
+                                className="h-8 px-4 text-xs"
                             >
                                 {isConnecting
                                     ? isCancelling
@@ -1108,18 +1117,25 @@ export function ConnectionDialog({
                                     : "Cancel"}
                             </Button>
                             <Button
+                                size="sm"
                                 onClick={handleConnect}
                                 disabled={isConnecting}
+                                className="h-8 px-4 text-xs gap-1.5"
                             >
-                                {isConnecting
-                                    ? "Connecting..."
-                                    : editingSession
-                                    ? "Update"
-                                    : "Connect"}
+                                {isConnecting ? (
+                                    <>
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        Connecting...
+                                    </>
+                                ) : editingSession ? (
+                                    "Update"
+                                ) : (
+                                    "Connect"
+                                )}
                             </Button>
                         </div>
                     </div>
-                </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     );

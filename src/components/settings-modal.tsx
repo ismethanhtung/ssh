@@ -1451,7 +1451,7 @@ export function SettingsModal({
                             onClick={handleReset}
                             className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 transition-colors"
                         >
-                            Reset to Defaults
+                            Reset to Defaults (Upcoming)
                         </button>
                         <div className="flex gap-2">
                             <Button
