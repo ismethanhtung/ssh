@@ -543,7 +543,7 @@ export function ConnectionDialog({
                         </TabsList>
                     </div>
 
-                    <ScrollArea className="h-[230px]">
+                    <ScrollArea className="h-[220px]">
                         <div className="px-1">
                             <TabsContent value="connection" className="mt-0 outline-none">
                                 <div className={cardContentClassName}>

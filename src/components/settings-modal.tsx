@@ -245,14 +245,26 @@ export function SettingsModal({
         },
     ];
 
+    // Compact styles matching ConnectionDialog
+    const inputClassName =
+        "h-8 !text-[12px] !font-normal bg-background/40 border-border/40 focus:border-primary/40 focus:bg-background/80 transition-all placeholder:text-muted-foreground/40";
+    const labelClassName =
+        "text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-1.5 block";
+    const selectTriggerClassName =
+        "h-8 text-[11px] font-medium bg-background/40 border-border/40 transition-all hover:bg-background/60 shadow-none";
+    const sectionTitleClassName =
+        "text-[11px] font-bold text-foreground/90 uppercase tracking-wider mb-0.5";
+    const sectionDescClassName =
+        "text-[10px] text-muted-foreground/60 leading-relaxed";
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[750px] h-[70vh] max-h-[650px] overflow-hidden p-0 gap-0 flex flex-col">
+            <DialogContent className="sm:max-w-[620px] h-[75vh] max-h-[630px] overflow-hidden p-0 gap-0 flex flex-col border border-border/50">
                 <div className="flex flex-col flex-1 min-h-0">
-                    {/* Header */}
-                    <div className="flex items-start justify-between px-5 pt-5 pb-3 border-b">
+                    {/* Compact Header */}
+                    <div className="px-4 py-3 border-b border-border/50 bg-muted/20">
                         <div>
-                            <DialogTitle className="text-2xl font-semibold mb-1">
+                            <DialogTitle className="text-sm font-semibold py-1">
                                 Settings
                             </DialogTitle>
                         </div>
@@ -260,10 +272,10 @@ export function SettingsModal({
 
                     {/* Main Content */}
                     <div className="flex flex-1 min-h-0 overflow-hidden">
-                        {/* Sidebar Navigation */}
-                        <div className="w-48 border-r bg-muted/30 flex flex-col shrink-0">
+                        {/* Compact Sidebar Navigation */}
+                        <div className="w-40 border-r border-border/40 bg-muted/10 flex flex-col shrink-0">
                             <ScrollArea className="flex-1">
-                                <nav className="p-2 space-y-1">
+                                <nav className="p-2 space-y-0.5">
                                     {categories.map((category) => {
                                         const Icon = category.icon;
                                         return (
@@ -275,14 +287,14 @@ export function SettingsModal({
                                                     )
                                                 }
                                                 className={cn(
-                                                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                                                    "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[11px] font-semibold",
                                                     activeCategory ===
                                                         category.id
-                                                        ? "bg-slate-800 text-primary-foreground shadow-sm"
-                                                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                                                        ? "bg-background text-primary border border-border/40"
+                                                        : "text-muted-foreground/70 hover:bg-background/50 hover:text-foreground"
                                                 )}
                                             >
-                                                <Icon className="h-4 w-4 shrink-0" />
+                                                <Icon className="h-3.5 w-3.5 shrink-0" />
                                                 <span>{category.label}</span>
                                             </button>
                                         );
@@ -294,26 +306,38 @@ export function SettingsModal({
                         {/* Content Area */}
                         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                             <ScrollArea className="flex-1">
-                                <div className="p-5">
+                                <div className="p-4">
                                     {/* Terminal Settings */}
                                     {activeCategory === "terminal" && (
                                         <ScrollArea className="h-[500px]">
-                                            <div className="space-y-6 pr-4">
+                                            <div className="space-y-4 pr-3 pb-2">
                                                 {/* Typography Section */}
-                                                <div className="space-y-4">
+                                                <div className="space-y-3">
                                                     <div>
-                                                        <h3 className="text-base font-semibold mb-1">
+                                                        <h3
+                                                            className={
+                                                                sectionTitleClassName
+                                                            }
+                                                        >
                                                             Typography
                                                         </h3>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p
+                                                            className={
+                                                                sectionDescClassName
+                                                            }
+                                                        >
                                                             Customize fonts and
                                                             readability
                                                         </p>
                                                     </div>
 
-                                                    <div className="grid grid-cols-2 gap-6">
-                                                        <div className="space-y-2">
-                                                            <Label>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="space-y-1.5">
+                                                            <Label
+                                                                className={
+                                                                    labelClassName
+                                                                }
+                                                            >
                                                                 Font Family
                                                             </Label>
                                                             <Select
@@ -329,7 +353,11 @@ export function SettingsModal({
                                                                     )
                                                                 }
                                                             >
-                                                                <SelectTrigger>
+                                                                <SelectTrigger
+                                                                    className={
+                                                                        selectTriggerClassName
+                                                                    }
+                                                                >
                                                                     <SelectValue>
                                                                         {{
                                                                             "Menlo, Monaco, 'Courier New', monospace":
@@ -354,40 +382,44 @@ export function SettingsModal({
                                                                     </SelectValue>
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    <SelectItem value="Menlo, Monaco, 'Courier New', monospace">
+                                                                    <SelectItem value="Menlo, Monaco, 'Courier New', monospace" className="text-[10px]">
                                                                         Menlo
                                                                     </SelectItem>
-                                                                    <SelectItem value="'JetBrains Mono', monospace">
+                                                                    <SelectItem value="'JetBrains Mono', monospace" className="text-[10px]">
                                                                         JetBrains
                                                                         Mono
                                                                     </SelectItem>
-                                                                    <SelectItem value="'Fira Code', monospace">
+                                                                    <SelectItem value="'Fira Code', monospace" className="text-[10px]">
                                                                         Fira
                                                                         Code
                                                                     </SelectItem>
-                                                                    <SelectItem value="'Source Code Pro', monospace">
+                                                                    <SelectItem value="'Source Code Pro', monospace" className="text-[10px]">
                                                                         Source
                                                                         Code Pro
                                                                     </SelectItem>
-                                                                    <SelectItem value="Consolas, monospace">
+                                                                    <SelectItem value="Consolas, monospace" className="text-[10px]">
                                                                         Consolas
                                                                     </SelectItem>
-                                                                    <SelectItem value="Monaco, monospace">
+                                                                    <SelectItem value="Monaco, monospace" className="text-[10px]">
                                                                         Monaco
                                                                     </SelectItem>
-                                                                    <SelectItem value="'Courier New', monospace">
+                                                                    <SelectItem value="'Courier New', monospace" className="text-[10px]">
                                                                         Courier
                                                                         New
                                                                     </SelectItem>
                                                                 </SelectContent>
                                                             </Select>
                                                         </div>
-                                                        <div className="space-y-3">
+                                                        <div className="space-y-2">
                                                             <div className="flex items-center justify-between">
-                                                                <Label className="text-sm font-medium">
+                                                                <Label
+                                                                    className={
+                                                                        labelClassName
+                                                                    }
+                                                                >
                                                                     Font Size
                                                                 </Label>
-                                                                <span className="text-sm text-muted-foreground">
+                                                                <span className="text-[10px] font-mono text-muted-foreground/60">
                                                                     {
                                                                         terminalAppearance.fontSize
                                                                     }
@@ -409,14 +441,19 @@ export function SettingsModal({
                                                                 min={8}
                                                                 max={32}
                                                                 step={1}
+                                                                className="h-1.5"
                                                             />
                                                         </div>
-                                                        <div className="space-y-3">
+                                                        <div className="space-y-2">
                                                             <div className="flex items-center justify-between">
-                                                                <Label className="text-sm font-medium">
+                                                                <Label
+                                                                    className={
+                                                                        labelClassName
+                                                                    }
+                                                                >
                                                                     Line Height
                                                                 </Label>
-                                                                <span className="text-sm text-muted-foreground">
+                                                                <span className="text-[10px] font-mono text-muted-foreground/60">
                                                                     {
                                                                         terminalAppearance.lineHeight
                                                                     }
@@ -437,15 +474,20 @@ export function SettingsModal({
                                                                 min={1.0}
                                                                 max={2.0}
                                                                 step={0.1}
+                                                                className="h-1.5"
                                                             />
                                                         </div>
-                                                        <div className="space-y-3">
+                                                        <div className="space-y-2">
                                                             <div className="flex items-center justify-between">
-                                                                <Label className="text-sm font-medium">
+                                                                <Label
+                                                                    className={
+                                                                        labelClassName
+                                                                    }
+                                                                >
                                                                     Letter
                                                                     Spacing
                                                                 </Label>
-                                                                <span className="text-sm text-muted-foreground">
+                                                                <span className="text-[10px] font-mono text-muted-foreground/60">
                                                                     {
                                                                         terminalAppearance.letterSpacing
                                                                     }
@@ -467,28 +509,41 @@ export function SettingsModal({
                                                                 min={-2}
                                                                 max={5}
                                                                 step={0.5}
+                                                                className="h-1.5"
                                                             />
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <Separator />
+                                                <Separator className="my-1 bg-border/30" />
 
                                                 {/* Appearance Section */}
-                                                <div className="space-y-5">
+                                                <div className="space-y-3">
                                                     <div>
-                                                        <h3 className="text-base font-semibold mb-1">
+                                                        <h3
+                                                            className={
+                                                                sectionTitleClassName
+                                                            }
+                                                        >
                                                             Appearance
                                                         </h3>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p
+                                                            className={
+                                                                sectionDescClassName
+                                                            }
+                                                        >
                                                             Visual style and
                                                             terminal behavior
                                                         </p>
                                                     </div>
 
-                                                    <div className="space-y-5">
-                                                        <div className="space-y-2">
-                                                            <Label>
+                                                    <div className="space-y-3">
+                                                        <div className="space-y-1.5">
+                                                            <Label
+                                                                className={
+                                                                    labelClassName
+                                                                }
+                                                            >
                                                                 Color Theme
                                                             </Label>
                                                             <Select
@@ -504,51 +559,59 @@ export function SettingsModal({
                                                                     )
                                                                 }
                                                             >
-                                                                <SelectTrigger>
+                                                                <SelectTrigger
+                                                                    className={
+                                                                        selectTriggerClassName
+                                                                    }
+                                                                >
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    <SelectItem value="vs-code-dark">
+                                                                    <SelectItem value="vs-code-dark" className="text-[10px]">
                                                                         VS Code
                                                                         Dark
                                                                     </SelectItem>
-                                                                    <SelectItem value="monokai">
+                                                                    <SelectItem value="monokai" className="text-[10px]">
                                                                         Monokai
                                                                     </SelectItem>
-                                                                    <SelectItem value="solarized-dark">
+                                                                    <SelectItem value="solarized-dark" className="text-[10px]">
                                                                         Solarized
                                                                         Dark
                                                                     </SelectItem>
-                                                                    <SelectItem value="solarized-light">
+                                                                    <SelectItem value="solarized-light" className="text-[10px]">
                                                                         Solarized
                                                                         Light
                                                                     </SelectItem>
-                                                                    <SelectItem value="dracula">
+                                                                    <SelectItem value="dracula" className="text-[10px]">
                                                                         Dracula
                                                                     </SelectItem>
-                                                                    <SelectItem value="one-dark">
+                                                                    <SelectItem value="one-dark" className="text-[10px]">
                                                                         One Dark
                                                                     </SelectItem>
-                                                                    <SelectItem value="nord">
+                                                                    <SelectItem value="nord" className="text-[10px]">
                                                                         Nord
                                                                     </SelectItem>
-                                                                    <SelectItem value="gruvbox-dark">
+                                                                    <SelectItem value="gruvbox-dark" className="text-[10px]">
                                                                         Gruvbox
                                                                         Dark
                                                                     </SelectItem>
-                                                                    <SelectItem value="tokyo-night">
+                                                                    <SelectItem value="tokyo-night" className="text-[10px]">
                                                                         Tokyo
                                                                         Night
                                                                     </SelectItem>
-                                                                    <SelectItem value="matrix">
+                                                                    <SelectItem value="matrix" className="text-[10px]">
                                                                         Matrix
                                                                     </SelectItem>
                                                                 </SelectContent>
                                                             </Select>
                                                         </div>
 
-                                                        <div className="space-y-2">
-                                                            <Label>
+                                                        <div className="space-y-1.5">
+                                                            <Label
+                                                                className={
+                                                                    labelClassName
+                                                                }
+                                                            >
                                                                 Cursor Style
                                                             </Label>
                                                             <Select
@@ -567,35 +630,34 @@ export function SettingsModal({
                                                                     )
                                                                 }
                                                             >
-                                                                <SelectTrigger>
+                                                                <SelectTrigger
+                                                                    className={
+                                                                        selectTriggerClassName
+                                                                    }
+                                                                >
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    <SelectItem value="block">
+                                                                    <SelectItem value="block" className="text-[10px]">
                                                                         Block
                                                                     </SelectItem>
-                                                                    <SelectItem value="underline">
+                                                                    <SelectItem value="underline" className="text-[10px]">
                                                                         Underline
                                                                     </SelectItem>
-                                                                    <SelectItem value="bar">
+                                                                    <SelectItem value="bar" className="text-[10px]">
                                                                         Bar
                                                                     </SelectItem>
                                                                 </SelectContent>
                                                             </Select>
                                                         </div>
 
-                                                        <div className="flex items-center justify-between">
+                                                        <div className="flex items-center justify-between py-1">
                                                             <div className="flex-1">
-                                                                <Label className="text-sm font-medium mb-1">
-                                                                    Cursor
-                                                                    Blinking
+                                                                <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
+                                                                    Cursor Blinking
                                                                 </Label>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    Enable
-                                                                    smooth
-                                                                    animation
-                                                                    for the
-                                                                    cursor
+                                                                <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                                                                    Enable smooth animation for the cursor
                                                                 </p>
                                                             </div>
                                                             <Switch
@@ -613,17 +675,13 @@ export function SettingsModal({
                                                             />
                                                         </div>
 
-                                                        <div className="flex items-center justify-between">
+                                                        <div className="flex items-center justify-between py-1">
                                                             <div className="flex-1">
-                                                                <Label className="text-sm font-medium mb-1">
-                                                                    Background
-                                                                    Transparency
+                                                                <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
+                                                                    Background Transparency
                                                                 </Label>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    Allow
-                                                                    terminal
-                                                                    window to be
-                                                                    semi-transparent
+                                                                <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                                                                    Allow terminal window to be semi-transparent
                                                                 </p>
                                                             </div>
                                                             <Switch
@@ -642,12 +700,12 @@ export function SettingsModal({
                                                         </div>
 
                                                         {terminalAppearance.allowTransparency && (
-                                                            <div className="space-y-3">
+                                                            <div className="space-y-2 pl-0">
                                                                 <div className="flex items-center justify-between">
-                                                                    <Label className="text-sm font-medium">
+                                                                    <Label className={labelClassName}>
                                                                         Opacity
                                                                     </Label>
-                                                                    <span className="text-sm text-muted-foreground">
+                                                                    <span className="text-[10px] font-mono text-muted-foreground/60">
                                                                         {
                                                                             terminalAppearance.opacity
                                                                         }
@@ -669,6 +727,7 @@ export function SettingsModal({
                                                                     min={10}
                                                                     max={100}
                                                                     step={5}
+                                                                    className="h-1.5"
                                                                 />
                                                             </div>
                                                         )}
@@ -680,10 +739,10 @@ export function SettingsModal({
                                                 {/* Terminal Preview */}
                                                 <div className="space-y-3">
                                                     <div>
-                                                        <h3 className="text-base font-semibold mb-1">
+                                                        <h3 className={sectionTitleClassName}>
                                                             Preview
                                                         </h3>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p className={sectionDescClassName}>
                                                             See how your
                                                             terminal will look
                                                         </p>
@@ -820,10 +879,14 @@ export function SettingsModal({
 
                                     {/* Connection Settings */}
                                     {activeCategory === "connection" && (
-                                        <div className="space-y-5">
-                                            <div className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <Label>
+                                        <div className="space-y-4">
+                                            <div className="space-y-3">
+                                                <div className="space-y-1.5">
+                                                    <Label
+                                                        className={
+                                                            labelClassName
+                                                        }
+                                                    >
                                                         Default Protocol
                                                     </Label>
                                                     <Select
@@ -839,32 +902,40 @@ export function SettingsModal({
                                                             )
                                                         }
                                                     >
-                                                        <SelectTrigger>
+                                                        <SelectTrigger
+                                                            className={
+                                                                selectTriggerClassName
+                                                            }
+                                                        >
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="SSH">
+                                                            <SelectItem value="SSH" className="text-[10px]">
                                                                 SSH
                                                             </SelectItem>
-                                                            <SelectItem value="Telnet">
+                                                            <SelectItem value="Telnet" className="text-[10px]">
                                                                 Telnet
                                                             </SelectItem>
-                                                            <SelectItem value="Raw">
+                                                            <SelectItem value="Raw" className="text-[10px]">
                                                                 Raw
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
 
-                                                <div className="flex gap-8">
+                                                <div className="grid grid-cols-2 gap-4">
                                                     {/* Connection Timeout */}
-                                                    <div className="space-y-3 flex-1 min-w-0">
+                                                    <div className="space-y-2">
                                                         <div className="flex items-center justify-between">
-                                                            <Label className="text-sm font-medium">
+                                                            <Label
+                                                                className={
+                                                                    labelClassName
+                                                                }
+                                                            >
                                                                 Connection
                                                                 Timeout
                                                             </Label>
-                                                            <span className="text-sm text-muted-foreground">
+                                                            <span className="text-[10px] font-mono text-muted-foreground/60">
                                                                 {
                                                                     settings.connectionTimeout
                                                                 }
@@ -886,16 +957,21 @@ export function SettingsModal({
                                                             min={5}
                                                             max={120}
                                                             step={5}
+                                                            className="h-1.5"
                                                         />
                                                     </div>
                                                     {/* Keep Alive Interval */}
-                                                    <div className="space-y-3 flex-1 min-w-0">
+                                                    <div className="space-y-2">
                                                         <div className="flex items-center justify-between">
-                                                            <Label className="text-sm font-medium">
+                                                            <Label
+                                                                className={
+                                                                    labelClassName
+                                                                }
+                                                            >
                                                                 Keep Alive
                                                                 Interval
                                                             </Label>
-                                                            <span className="text-sm text-muted-foreground">
+                                                            <span className="text-[10px] font-mono text-muted-foreground/60">
                                                                 {
                                                                     settings.keepAliveInterval
                                                                 }
@@ -917,16 +993,17 @@ export function SettingsModal({
                                                             min={30}
                                                             max={300}
                                                             step={30}
+                                                            className="h-1.5"
                                                         />
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center justify-between py-1">
                                                     <div className="flex-1">
-                                                        <Label className="text-sm font-medium mb-1">
+                                                        <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
                                                             Auto Reconnect
                                                         </Label>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
                                                             Automatically
                                                             reconnect when
                                                             connection is lost
@@ -952,15 +1029,15 @@ export function SettingsModal({
 
                                     {/* Security Settings */}
                                     {activeCategory === "security" && (
-                                        <div className="space-y-5">
-                                            <div className="space-y-4">
-                                                <div className="flex items-center justify-between">
+                                        <div className="space-y-4">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between py-1">
                                                     <div className="flex-1">
-                                                        <Label className="text-sm font-medium mb-1">
+                                                        <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
                                                             Host Key
                                                             Verification
                                                         </Label>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
                                                             Verify SSH host keys
                                                             for enhanced
                                                             security
@@ -981,14 +1058,14 @@ export function SettingsModal({
                                                     />
                                                 </div>
 
-                                                <Separator />
+                                                <Separator className="my-1 bg-border/30" />
 
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center justify-between py-1">
                                                     <div className="flex-1">
-                                                        <Label className="text-sm font-medium mb-1">
+                                                        <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
                                                             Save Passwords
                                                         </Label>
-                                                        <p className="text-sm text-muted-foreground">
+                                                        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
                                                             Store passwords
                                                             locally (encrypted)
                                                         </p>
@@ -1008,16 +1085,22 @@ export function SettingsModal({
                                                     />
                                                 </div>
 
-                                                <div className="space-y-3">
+                                                <Separator className="my-1 bg-border/30" />
+
+                                                <div className="space-y-2">
                                                     <div className="flex items-center justify-between">
-                                                        <Label className="text-sm font-medium">
-                                                            Auto Lock Timeout
+                                                        <Label
+                                                            className={
+                                                                labelClassName
+                                                            }
+                                                        >
+                                                            Auto-Lock Timeout
                                                         </Label>
-                                                        <span className="text-sm text-muted-foreground">
+                                                        <span className="text-[10px] font-mono text-muted-foreground/60">
                                                             {
                                                                 settings.autoLockTimeout
                                                             }{" "}
-                                                            minutes
+                                                            min
                                                         </span>
                                                     </div>
                                                     <Slider
@@ -1035,11 +1118,11 @@ export function SettingsModal({
                                                         min={5}
                                                         max={120}
                                                         step={5}
+                                                        className="h-1.5"
                                                     />
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Automatically lock the
-                                                        application after this
-                                                        period of inactivity
+                                                    <p className="text-[9px] text-muted-foreground/50 leading-relaxed mt-1">
+                                                        Automatically lock after
+                                                        inactivity
                                                     </p>
                                                 </div>
                                             </div>
@@ -1048,10 +1131,14 @@ export function SettingsModal({
 
                                     {/* Interface Settings */}
                                     {activeCategory === "interface" && (
-                                        <div className="space-y-5">
-                                            <div className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <Label>
+                                        <div className="space-y-4">
+                                            <div className="space-y-3">
+                                                <div className="space-y-1.5">
+                                                    <Label
+                                                        className={
+                                                            labelClassName
+                                                        }
+                                                    >
                                                         Application Theme
                                                     </Label>
                                                     <Select
@@ -1065,25 +1152,33 @@ export function SettingsModal({
                                                             )
                                                         }
                                                     >
-                                                        <SelectTrigger>
+                                                        <SelectTrigger
+                                                            className={
+                                                                selectTriggerClassName
+                                                            }
+                                                        >
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="dark">
+                                                            <SelectItem value="dark" className="text-[10px]">
                                                                 Dark (Very bad)
                                                             </SelectItem>
-                                                            <SelectItem value="light">
+                                                            <SelectItem value="light" className="text-[10px]">
                                                                 Light
                                                             </SelectItem>
-                                                            <SelectItem value="auto">
+                                                            <SelectItem value="auto" className="text-[10px]">
                                                                 Auto (System)
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
 
-                                                <div className="space-y-2">
-                                                    <Label>
+                                                <div className="space-y-1.5">
+                                                    <Label
+                                                        className={
+                                                            labelClassName
+                                                        }
+                                                    >
                                                         Dark Background Color
                                                     </Label>
                                                     <div className="flex items-center gap-2">
@@ -1099,7 +1194,7 @@ export function SettingsModal({
                                                                         .value
                                                                 )
                                                             }
-                                                            className="w-12 h-8 p-1 border rounded"
+                                                            className="w-10 h-8 p-0.5 border rounded cursor-pointer"
                                                         />
                                                         <Input
                                                             value={
@@ -1113,24 +1208,26 @@ export function SettingsModal({
                                                                 )
                                                             }
                                                             placeholder="#1a1b26"
-                                                            className="flex-1"
+                                                            className={cn(
+                                                                inputClassName,
+                                                                "font-mono flex-1"
+                                                            )}
                                                         />
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Customize the background
-                                                        color for dark mode
+                                                    <p className="text-[9px] text-muted-foreground/50 leading-relaxed mt-0.5">
+                                                        Customize the background color for dark mode
                                                     </p>
                                                 </div>
 
-                                                <Separator />
+                                                <Separator className="my-1 bg-border/30" />
 
-                                                <div className="space-y-4">
-                                                    <Label className="text-sm font-medium">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[11px] font-semibold text-foreground/90 uppercase tracking-wider">
                                                         Panel Visibility
                                                     </Label>
 
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-sm">
+                                                    <div className="flex items-center justify-between py-0.5">
+                                                        <span className="text-[11px] text-foreground/80">
                                                             Session Manager
                                                         </span>
                                                         <Switch
@@ -1167,8 +1264,8 @@ export function SettingsModal({
                                                         />
                                                     </div>
 
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-sm">
+                                                    <div className="flex items-center justify-between py-0.5">
+                                                        <span className="text-[11px] text-foreground/80">
                                                             Status Bar
                                                         </span>
                                                         <Switch
@@ -1187,17 +1284,15 @@ export function SettingsModal({
                                                     </div>
                                                 </div>
 
-                                                <Separator />
+                                                <Separator className="my-1 bg-border/30" />
 
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center justify-between py-1">
                                                     <div className="flex-1">
-                                                        <Label className="text-sm font-medium mb-1">
+                                                        <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
                                                             Enable Notifications
                                                         </Label>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Show system
-                                                            notifications for
-                                                            important events
+                                                        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                                                            Show system notifications for important events
                                                         </p>
                                                     </div>
                                                     <Switch
@@ -1220,11 +1315,19 @@ export function SettingsModal({
 
                                     {/* Keyboard Settings */}
                                     {activeCategory === "keyboard" && (
-                                        <div className="space-y-5">
-                                            <div className="space-y-4">
+                                        <div className="space-y-4">
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <h3 className="text-[11px] font-bold text-foreground/90 uppercase tracking-wider mb-0.5">
+                                                        Keyboard Shortcuts
+                                                    </h3>
+                                                    <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                                                        Customize keyboard shortcuts for common actions
+                                                    </p>
+                                                </div>
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label>
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>
                                                             New Session
                                                         </Label>
                                                         <Input
@@ -1239,10 +1342,11 @@ export function SettingsModal({
                                                                 )
                                                             }
                                                             placeholder="Ctrl+N"
+                                                            className={cn(inputClassName, "font-mono text-center")}
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label>
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>
                                                             Close Session
                                                         </Label>
                                                         <Input
@@ -1257,13 +1361,14 @@ export function SettingsModal({
                                                                 )
                                                             }
                                                             placeholder="Ctrl+W"
+                                                            className={cn(inputClassName, "font-mono text-center")}
                                                         />
                                                     </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label>Next Tab</Label>
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>Next Tab</Label>
                                                         <Input
                                                             value={
                                                                 settings.nextTab
@@ -1276,10 +1381,11 @@ export function SettingsModal({
                                                                 )
                                                             }
                                                             placeholder="Ctrl+Tab"
+                                                            className={cn(inputClassName, "font-mono text-center")}
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label>
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>
                                                             Previous Tab
                                                         </Label>
                                                         <Input
@@ -1294,19 +1400,17 @@ export function SettingsModal({
                                                                 )
                                                             }
                                                             placeholder="Ctrl+Shift+Tab"
+                                                            className={cn(inputClassName, "font-mono text-center")}
                                                         />
                                                     </div>
                                                 </div>
 
-                                                <div className="rounded-lg border bg-muted/50 p-4">
-                                                    <p className="text-sm text-muted-foreground">
-                                                        <strong className="text-foreground">
+                                                <div className="rounded-lg border border-border/40 bg-muted/30 p-3">
+                                                    <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                                                        <strong className="text-foreground/90 font-semibold">
                                                             Note:
                                                         </strong>{" "}
-                                                        Changes to keyboard
-                                                        shortcuts will take
-                                                        effect after restarting
-                                                        the application.
+                                                        Changes to keyboard shortcuts will take effect after restarting the application.
                                                     </p>
                                                 </div>
                                             </div>
@@ -1315,11 +1419,11 @@ export function SettingsModal({
 
                                     {/* Advanced Settings */}
                                     {activeCategory === "advanced" && (
-                                        <div className="space-y-5">
-                                            <div className="space-y-4">
+                                        <div className="space-y-4">
+                                            <div className="space-y-3">
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <Label>Log Level</Label>
+                                                    <div className="space-y-1.5">
+                                                        <Label className={labelClassName}>Log Level</Label>
                                                         <Select
                                                             value={
                                                                 settings.logLevel
@@ -1333,31 +1437,31 @@ export function SettingsModal({
                                                                 )
                                                             }
                                                         >
-                                                            <SelectTrigger>
+                                                            <SelectTrigger className={selectTriggerClassName}>
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="error">
+                                                                <SelectItem value="error" className="text-[10px]">
                                                                     Error
                                                                 </SelectItem>
-                                                                <SelectItem value="warn">
+                                                                <SelectItem value="warn" className="text-[10px]">
                                                                     Warning
                                                                 </SelectItem>
-                                                                <SelectItem value="info">
+                                                                <SelectItem value="info" className="text-[10px]">
                                                                     Info
                                                                 </SelectItem>
-                                                                <SelectItem value="debug">
+                                                                <SelectItem value="debug" className="text-[10px]">
                                                                     Debug
                                                                 </SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
-                                                    <div className="space-y-3">
+                                                    <div className="space-y-2">
                                                         <div className="flex items-center justify-between">
-                                                            <Label className="text-sm font-medium">
+                                                            <Label className={labelClassName}>
                                                                 Max Log Size
                                                             </Label>
-                                                            <span className="text-sm text-muted-foreground">
+                                                            <span className="text-[10px] font-mono text-muted-foreground/60">
                                                                 {
                                                                     settings.maxLogSize
                                                                 }
@@ -1379,21 +1483,20 @@ export function SettingsModal({
                                                             min={10}
                                                             max={500}
                                                             step={10}
+                                                            className="h-1.5"
                                                         />
                                                     </div>
                                                 </div>
 
-                                                <Separator />
+                                                <Separator className="my-1 bg-border/30" />
 
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center justify-between py-1">
                                                     <div className="flex-1">
-                                                        <Label className="text-sm font-medium mb-1">
+                                                        <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
                                                             Check for Updates
                                                         </Label>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Automatically check
-                                                            for application
-                                                            updates
+                                                        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                                                            Automatically check for application updates
                                                         </p>
                                                     </div>
                                                     <Switch
@@ -1411,16 +1514,13 @@ export function SettingsModal({
                                                     />
                                                 </div>
 
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center justify-between py-1">
                                                     <div className="flex-1">
-                                                        <Label className="text-sm font-medium mb-1">
+                                                        <Label className="text-[11px] font-semibold text-foreground/90 mb-0.5 block">
                                                             Enable Telemetry
                                                         </Label>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            Help improve the
-                                                            application by
-                                                            sending anonymous
-                                                            usage data
+                                                        <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                                                            Help improve the application by sending anonymous usage data
                                                         </p>
                                                     </div>
                                                     <Switch
@@ -1445,25 +1545,25 @@ export function SettingsModal({
                         </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-between border-t px-5 py-3">
+                    {/* Compact Footer */}
+                    <div className="flex items-center justify-between border-t border-border/50 bg-muted/10 px-4 py-3">
                         <button
                             onClick={handleReset}
-                            className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 transition-colors"
+                            className="text-[11px] text-muted-foreground/70 hover:text-foreground underline-offset-4 transition-colors font-medium"
                         >
-                            Reset to Defaults (Upcoming)
+                            Reset to Defaults (U)
                         </button>
                         <div className="flex gap-2">
                             <Button
                                 variant="ghost"
                                 onClick={() => onOpenChange(false)}
-                                className="text-sm"
+                                className="h-8 text-[11px] px-3"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 onClick={handleSave}
-                                className="min-w-[140px] text-sm"
+                                className="h-8 min-w-[120px] text-[11px] px-4"
                             >
                                 Apply Changes
                             </Button>
