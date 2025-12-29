@@ -178,6 +178,9 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
     const [historyDateFilter, setHistoryDateFilter] = useState<
         "all" | "today" | "week"
     >("all");
+    const [historySeverityFilter, setHistorySeverityFilter] = useState<
+        AlertSeverity | "all"
+    >("all");
     const [isClearHistoryDialogOpen, setIsClearHistoryDialogOpen] =
         useState(false);
 
@@ -906,6 +909,13 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
             filtered = filtered.filter((h) => h.category === selectedCategory);
         }
 
+        // Filter by severity
+        if (historySeverityFilter !== "all") {
+            filtered = filtered.filter(
+                (h) => h.severity === historySeverityFilter
+            );
+        }
+
         // Filter by date
         const now = new Date();
         if (historyDateFilter === "today") {
@@ -921,7 +931,12 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
         }
 
         return filtered;
-    }, [alertHistory, selectedCategory, historyDateFilter]);
+    }, [
+        alertHistory,
+        selectedCategory,
+        historySeverityFilter,
+        historyDateFilter,
+    ]);
 
     const categories: { value: AlertCategory | "all"; label: string }[] = [
         { value: "all", label: "All" },
@@ -1123,14 +1138,50 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                             >
                                 7 days
                             </button>
+
+                            {/* Separator */}
+                            <div className="h-3 w-px bg-border mx-1" />
+
+                            {/* Severity Filter */}
+                            <button
+                                onClick={() => setHistorySeverityFilter("all")}
+                                className={cn(
+                                    "px-1.5 py-0.5 text-[9px] rounded transition-all",
+                                    historySeverityFilter === "all"
+                                        ? "bg-primary/20 text-primary"
+                                        : "text-muted-foreground hover:bg-muted"
+                                )}
+                            >
+                                All
+                            </button>
+                            <button
+                                onClick={() =>
+                                    setHistorySeverityFilter("critical")
+                                }
+                                className={cn(
+                                    "px-1.5 py-0.5 text-[9px] rounded transition-all border border-red-500/30",
+                                    historySeverityFilter === "critical"
+                                        ? "bg-red-500/20 text-red-400"
+                                        : "text-red-400/70 hover:bg-red-500/10"
+                                )}
+                            >
+                                Critical
+                            </button>
+                            <button
+                                onClick={() =>
+                                    setHistorySeverityFilter("warning")
+                                }
+                                className={cn(
+                                    "px-1.5 py-0.5 text-[9px] rounded transition-all border border-amber-500/30",
+                                    historySeverityFilter === "warning"
+                                        ? "bg-amber-500/20 text-amber-400"
+                                        : "text-amber-400/70 hover:bg-amber-500/10"
+                                )}
+                            >
+                                Warning
+                            </button>
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                                <Clock className="h-2.5 w-2.5" />
-                                {t("alerts.updated")}{" "}
-                                {lastUpdated.toLocaleTimeString()}
-                            </div>
-
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -1140,6 +1191,7 @@ export function AlertViewer({ sessionId }: AlertViewerProps) {
                                 title="Refresh data"
                             >
                                 <RefreshCw
+                                    key={isLoading ? "loading" : "idle"}
                                     className={cn(
                                         "h-3 w-3",
                                         isLoading && "animate-spin"

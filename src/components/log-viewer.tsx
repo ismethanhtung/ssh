@@ -439,7 +439,7 @@ export function LogViewer({ sessionId }: LogViewerProps) {
                                 <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center mb-3">
                                     <FileText className="w-5 h-5 text-muted-foreground/20" />
                                 </div>
-                                <h3 className="text-[11px]    ">
+                                <h3 className="text-[11px]">
                                     No Source Selected
                                 </h3>
                             </div>

@@ -75,22 +75,8 @@ export function WelcomeScreen({
             <div className="max-w-5xl w-full mx-auto p-6 space-y-6">
                 {/* Hero Section */}
                 <div className="text-center space-y-3">
-                    <div className="flex items-center justify-center gap-3">
-                        <div className="p-2.5 bg-muted rounded-lg">
-                            <Terminal className="h-7 w-7 text-muted-foreground" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-semibold">
-                                {t("app.welcome")}
-                            </h1>
-                        </div>
-                    </div>
-
                     {/* Supported Protocols */}
                     <div className="flex items-center justify-center gap-2 flex-wrap">
-                        <span className="text-xs text-muted-foreground">
-                            {t("welcome.supports")}:
-                        </span>
                         {protocols.map((protocol) => (
                             <span
                                 key={protocol.name}

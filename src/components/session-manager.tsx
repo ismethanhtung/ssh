@@ -690,14 +690,28 @@ export function SessionManager({
                 {/* Session Browser */}
                 <div className="flex-1 min-h-0 flex flex-col">
                     <div className="py-2 px-3 border-b border-border flex items-center justify-between gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openNewFolderDialog()}
-                            className="h-7 w-7 p-0"
-                        >
-                            <FolderPlus className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openNewFolderDialog()}
+                                className="h-7 w-7 p-0"
+                                title="New Folder"
+                            >
+                                <FolderPlus className="w-4 h-4" />
+                            </Button>
+                            {onNewConnection && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={onNewConnection}
+                                    className="h-7 w-7 p-0"
+                                    title="New Session"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </Button>
+                            )}
+                        </div>
 
                         <div className="flex items-center gap-1">
                             <LanguageSwitcher />

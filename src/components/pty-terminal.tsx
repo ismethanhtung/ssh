@@ -163,8 +163,11 @@ export function PtyTerminal({
 
             // Wait for WebSocket server to be ready
             const checkServerReady = async (retries = 0): Promise<void> => {
-                if (retries >= 20) { // Max 10 seconds
-                    throw new Error("WebSocket server not ready after 10 seconds");
+                if (retries >= 20) {
+                    // Max 10 seconds
+                    throw new Error(
+                        "WebSocket server not ready after 10 seconds"
+                    );
                 }
 
                 try {
@@ -188,18 +191,28 @@ export function PtyTerminal({
                         };
                     });
                 } catch (error) {
-                    console.log(`[PTY Terminal] [${sessionId}] WebSocket server not ready, retrying... (${retries + 1}/20)`);
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    console.log(
+                        `[PTY Terminal] [${sessionId}] WebSocket server not ready, retrying... (${
+                            retries + 1
+                        }/20)`
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, 500));
                     return checkServerReady(retries + 1);
                 }
             };
 
             try {
                 await checkServerReady();
-                console.log(`[PTY Terminal] [${sessionId}] WebSocket server is ready`);
+                console.log(
+                    `[PTY Terminal] [${sessionId}] WebSocket server is ready`
+                );
             } catch (error: any) {
-                console.warn(`[PTY Terminal] [${sessionId}] ${error.message}, proceeding anyway`);
-                term.write("\r\n\x1b[33m[Warning: WebSocket server may not be ready]\x1b[0m\r\n");
+                console.warn(
+                    `[PTY Terminal] [${sessionId}] ${error.message}, proceeding anyway`
+                );
+                term.write(
+                    "\r\n\x1b[33m[Warning: WebSocket server may not be ready]\x1b[0m\r\n"
+                );
             }
 
             const ws = new WebSocket("ws://127.0.0.1:9001");
@@ -238,9 +251,6 @@ export function PtyTerminal({
                                 ptyReadyRef.current = true; // Mark PTY as ready
                                 term.writeln(
                                     "\x1b[32m✓ PTY session started\x1b[0m"
-                                );
-                                term.writeln(
-                                    "\x1b[90mYou can now use interactive commands: vim, less, more, top, etc.\x1b[0m"
                                 );
                                 term.write("\r\n");
                             }
@@ -314,11 +324,16 @@ export function PtyTerminal({
                         case "Error":
                             // Handle "PTY session not found" gracefully - this is normal when session is closing
                             if (msg.message.includes("PTY session not found")) {
-                                console.debug(`[PTY Terminal] [${sessionId}] PTY session not found (session may be closing)`);
+                                console.debug(
+                                    `[PTY Terminal] [${sessionId}] PTY session not found (session may be closing)`
+                                );
                                 ptyReadyRef.current = false; // Mark PTY as not ready
                                 // Don't show error to user - this is expected during cleanup
                             } else {
-                                console.error("[PTY Terminal] Error:", msg.message);
+                                console.error(
+                                    "[PTY Terminal] Error:",
+                                    msg.message
+                                );
                                 term.write(
                                     `\r\n\x1b[31m[Error: ${msg.message}]\x1b[0m\r\n`
                                 );
@@ -354,12 +369,19 @@ export function PtyTerminal({
                         if (!isRunning || retryCount >= maxRetries) return;
 
                         retryCount++;
-                        const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); // Max 30 seconds
+                        const delay = Math.min(
+                            1000 * Math.pow(2, retryCount),
+                            30000
+                        ); // Max 30 seconds
 
                         setTimeout(() => {
                             if (isRunning) {
-                                console.log(`[PTY Terminal] Retry ${retryCount}/${maxRetries} after ${delay}ms`);
-                                term.write(`\r\n\x1b[33m[Retry ${retryCount}/${maxRetries}...]\x1b[0m\r\n`);
+                                console.log(
+                                    `[PTY Terminal] Retry ${retryCount}/${maxRetries} after ${delay}ms`
+                                );
+                                term.write(
+                                    `\r\n\x1b[33m[Retry ${retryCount}/${maxRetries}...]\x1b[0m\r\n`
+                                );
                                 connectWebSocket();
                             }
                         }, delay);
@@ -375,7 +397,11 @@ export function PtyTerminal({
         const inputDisposable = term.onData((data: string) => {
             const ws = wsRef.current;
             // Only send input if WebSocket is open AND PTY session is ready
-            if (!ws || ws.readyState !== WebSocket.OPEN || !ptyReadyRef.current) {
+            if (
+                !ws ||
+                ws.readyState !== WebSocket.OPEN ||
+                !ptyReadyRef.current
+            ) {
                 return;
             }
 
@@ -464,7 +490,10 @@ export function PtyTerminal({
                 try {
                     ws.send(JSON.stringify(closeMsg));
                 } catch (e) {
-                    console.debug(`[PTY Terminal] [${sessionId}] Failed to send close message:`, e);
+                    console.debug(
+                        `[PTY Terminal] [${sessionId}] Failed to send close message:`,
+                        e
+                    );
                 }
                 ws.close();
             }
